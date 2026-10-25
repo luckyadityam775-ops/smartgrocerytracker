@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organic Test Runner - Smart Grocery Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    pre, code { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 sm:p-8">
+  <div class="max-w-3xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-extrabold text-white flex items-center gap-2">
+          <span>🧪 Organic End-to-End Test Suite</span>
+        </h1>
+        <p class="text-xs text-slate-400 mt-1">Simulasi Perilaku Nyata Anak Rantau (Rian) Berbelanja di Supermarket (SRS F-01 s/d F-06)</p>
+      </div>
+      <button id="btn-rerun" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-900/30">
+        Jalankan Ulang
+      </button>
+    </div>
+
+    <!-- Summary Box -->
+    <div id="test-summary" class="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-6 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span id="summary-icon" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-lg">⏳</span>
+        <div>
+          <h2 id="summary-title" class="text-sm font-bold text-white">Menjalankan Simulasi...</h2>
+          <p id="summary-stats" class="text-xs text-slate-400">Sedang memproses seluruh skenario belanja...</p>
+        </div>
+      </div>
+      <div id="summary-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-400">
+        In Progress
+      </div>
+    </div>
+
+    <!-- Test Results Feed -->
+    <div id="test-results" class="space-y-3"></div>
+
+    <!-- Link back -->
+    <div class="mt-8 pt-4 border-t border-slate-800 text-center">
+      <a href="./index.html" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-400 hover:underline">
+        ← Buka Aplikasi Utama (Smart Grocery Tracker)
+      </a>
+    </div>
+  </div>
+
+  <!-- Dependencies -->
+  <script src="./js/seedData.js"></script>
+  <script src="./js/calculator.js"></script>
+  <script src="./js/comparator.js"></script>
+  <script src="./js/store.js"></script>
+
+  <script>
+    const resultsContainer = document.getElementById('test-results');
+    const summaryTitle = document.getElementById('summary-title');
+    const summaryStats = document.getElementById('summary-stats');
+    const summaryBadge = document.getElementById('summary-badge');
+    const summaryIcon = document.getElementById('summary-icon');
+
+    const tests = [];
+    let passedCount = 0;
+    let failedCount = 0;
+
+    function recordTest(title, category, passed, details) {
+      tests.push({ title, category, passed, details });
+      if (passed) passedCount++; else failedCount++;
+
+      const el = document.createElement('div');
+      el.className = `p-4 rounded-xl border transition ${passed ? 'bg-slate-900/80 border-emerald-500/30' : 'bg-rose-950/20 border-rose-500/40'}`;
+      el.innerHTML = `
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-start gap-2.5">
+            <span class="text-sm mt-0.5">${passed ? '✅' : '❌'}</span>
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${passed ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400'}">${category}</span>
+                <h3 class="text-xs font-bold text-white">${title}</h3>
+              </div>
+              <p class="text-xs text-slate-300">${details}</p>
+            </div>
+          </div>
+          <span class="text-[11px] font-bold ${passed ? 'text-emerald-400' : 'text-rose-400'}">${passed ? 'PASSED' : 'FAILED'}</span>
+        </div>
+      `;
+      resultsContainer.appendChild(el);
+    }
+
+    async function runOrganicSimulation() {
+      resultsContainer.innerHTML = '';
+      passedCount = 0;
+      failedCount = 0;
+      tests.length = 0;
+
+      // Reset to fresh demo state
+      Store.resetDemo();
+
+      // ==========================================
+      // SKENARIO 1: Insialisasi & Verifikasi Data Awal
+      // ==========================================
+      const budget = Store.getBudgetSettings();
+      const isBudgetInit = budget && budget.monthlyLimit === 500000 && budget.emergencyReserve === 50000;
+      recordTest(
+        "Inisialisasi Profil & Anggaran Rian",
+        "Setup & Saldo",
+        isBudgetInit,
+        `Batas Anggaran: ${Calculator.formatRupiah(budget.monthlyLimit)}, Cadangan Darurat: ${Calculator.formatRupiah(budget.emergencyReserve)}`
+      );
+
+      // ==========================================
+      // SKENARIO 2: [F-03] Diskon Bertingkat Sekuensial (Multi-Tier)
+      // ==========================================
+      // Uji Sabun Mandi: Rp 24.000 dengan Promo 50% + 20%
+      const tieredResult = Calculator.calculateItemDiscount(24000, "tiered", 50, 20, 0);
+      // Hitungan eksak: 24000 * 0.5 = 12000; 12000 * 0.8 = 9600; Hemat = 14400 (60%)
+      const isTieredAccurate = tieredResult.finalPrice === 9600 && tieredResult.savingsPerUnit === 14400 && tieredResult.effectivePercent === 60;
+      recordTest(
+        "[F-03] Presisi Matematika Diskon Bertingkat (50% + 20%)",
+        "Kalkulator Diskon",
+        isTieredAccurate,
+        `Harga Normal: Rp 24.000 → Bayar: ${Calculator.formatRupiah(tieredResult.finalPrice)} | Total Hemat: ${Calculator.formatRupiah(tieredResult.savingsPerUnit)} (Diskon Efektif: ${tieredResult.effectivePercent}%, BUKAN 70%!)`
+      );
+
+      // Uji Diskon Tunggal: Rp 15.000 diskon 10% -> 13.500
+      const singleResult = Calculator.calculateItemDiscount(15000, "single", 10, 0, 0);
+      const isSingleAccurate = singleResult.finalPrice === 13500 && singleResult.savingsPerUnit === 1500;
+      recordTest(
+        "[F-03] Perhitungan Diskon Tunggal (10%)",
+        "Kalkulator Diskon",
+        isSingleAccurate,
+        `Harga Normal: Rp 15.000 (Disc 10%) → Bayar: ${Calculator.formatRupiah(singleResult.finalPrice)} | Hemat: ${Calculator.formatRupiah(singleResult.savingsPerUnit)}`
+      );
+
+      // ==========================================
+      // SKENARIO 3: [F-04] Komparator Harga vs Bulan Lalu
+      // ==========================================
+      // Beras: 72.000 vs 68.000 (Naik Rp 4.000)
+      const compHigher = Comparator.compare(72000, 68000);
+      const isHigherOk = compHigher.type === 'higher' && compHigher.diffAmount === 4000 && compHigher.arrow === '↑';
+      recordTest(
+        "[F-04] Deteksi Kenaikan Harga (Beras Ramos)",
+        "Komparator Harga",
+        isHigherOk,
+        `Harga Sekarang: Rp 72.000 vs Bulan Lalu: Rp 68.000 → Indikator: ${compHigher.label} (${compHigher.arrow} Merah)`
+      );
+
+      // Minyak: 32.500 vs 34.000 (Turun Rp 1.500)
+      const compLower = Comparator.compare(32500, 34000);
+      const isLowerOk = compLower.type === 'lower' && compLower.diffAmount === -1500 && compLower.arrow === '↓';
+      recordTest(
+        "[F-04] Deteksi Penurunan Harga (Minyak Goreng)",
+        "Komparator Harga",
+        isLowerOk,
+        `Harga Sekarang: Rp 32.500 vs Bulan Lalu: Rp 34.000 → Indikator: ${compLower.label} (${compLower.arrow} Hijau)`
+      );
+
+      // Indomie: 15.000 vs 15.000 (Stabil)
+      const compEqual = Comparator.compare(15000, 15000);
+      const isEqualOk = compEqual.type === 'equal' && compEqual.diffAmount === 0;
+      recordTest(
+        "[F-04] Deteksi Harga Stabil / Sama Persis (Indomie)",
+        "Komparator Harga",
+        isEqualOk,
+        `Harga Sekarang: Rp 15.000 vs Bulan Lalu: Rp 15.000 → Indikator: ${compEqual.label}`
+      );
+
+      // ==========================================
+      // SKENARIO 4: [F-02] Perhitungan Kuantitas Real-time di Keranjang
+      // ==========================================
+      const initialCart = Store.getActiveCart();
+      const berasItem = initialCart.find(i => i.name.includes("Beras"));
+      const initialSubtotal = berasItem.currentPrice * berasItem.qty;
+
+      // Simulasi Rian menambah kuantitas Beras dari 1 ke 2
+      Store.updateItemQty(berasItem.id, 1);
+      const updatedCart = Store.getActiveCart();
+      const updatedBeras = updatedCart.find(i => i.id === berasItem.id);
+      const newRowCalc = Calculator.calculateItemRow(updatedBeras);
+      const isStepperOk = updatedBeras.qty === 2 && newRowCalc.subtotalFinal === 144000;
+
+      recordTest(
+        "[F-02] Stepper Kuantitas (+ / -) & Subtotal Otomatis Real-time",
+        "Keranjang Troli",
+        isStepperOk,
+        `Qty Beras diubah 1 → 2: Subharga otomatis berlipat dari ${Calculator.formatRupiah(initialSubtotal)} menjadi ${Calculator.formatRupiah(newRowCalc.subtotalFinal)} tanpa tombol manual.`
+      );
+
+      // ==========================================
+      // SKENARIO 5: [F-01] Menambahkan Barang Baru ke Troli
+      // ==========================================
+      const newItem = Store.addCartItem({
+        name: "Telur Ayam 1kg",
+        category: "Sembako",
+        unit: "kg",
+        qty: 2,
+        currentPrice: 29000,
+        lastPrice: 28000,
+        discountType: "none",
+        discountA: 0,
+        discountB: 0,
+        discountNominal: 0
+      });
+
+      const isItemAdded = !!Store.getActiveCart().find(i => i.name === "Telur Ayam 1kg");
+      recordTest(
+        "[F-01] Pencatatan Barang Baru (Telur Ayam)",
+        "Input Barang",
+        isItemAdded,
+        `Menambahkan 2 kg Telur Ayam @ Rp 29.000 (Naik Rp 1.000 vs Rp 28.000). Barang langsung masuk ke troli.`
+      );
+
+      // ==========================================
+      // SKENARIO 6: [F-05] Budget Safety Cap Gauge & Threshold Warning
+      // ==========================================
+      const cartSummary = Calculator.calculateCartSummary(Store.getActiveCart(), budget.monthlyLimit, { type: 'none', value: 0 });
+      // Total Belanja saat ini sekitar ~270.000 (< 80% = Safe)
+      const isSafeThreshold = cartSummary.safetyStatus === 'safe' && cartSummary.budgetUsagePercent < 80;
+      recordTest(
+        "[F-05] Budget Safety Cap Status: Aman (< 80%)",
+        "Budget Cap",
+        isSafeThreshold,
+        `Total Belanja: ${Calculator.formatRupiah(cartSummary.grandTotal)} dari Batas: ${Calculator.formatRupiah(cartSummary.budgetLimit)} (${cartSummary.budgetUsagePercent}% terpakai). Status: "${cartSummary.statusLabel}"`
+      );
+
+      // Simulasi Rian memasukkan barang mahal hingga mendekati batas (>80%)
+      const simHighSummary = Calculator.calculateCartSummary([
+        { currentPrice: 420000, qty: 1, discountType: 'none' }
+      ], 500000);
+      const isWarningThreshold = simHighSummary.safetyStatus === 'warning';
+      recordTest(
+        "[F-05] Budget Safety Cap Status: Peringatan (80% - 95%)",
+        "Budget Cap",
+        isWarningThreshold,
+        `Total Belanja: Rp 420.000 (84% terpakai). Status: "${simHighSummary.statusLabel}" (Kuning)`
+      );
+
+      // Simulasi Melebihi Batas Anggaran (> 95% / Overbudget)
+      const simDangerSummary = Calculator.calculateCartSummary([
+        { currentPrice: 530000, qty: 1, discountType: 'none' }
+      ], 500000);
+      const isDangerThreshold = simDangerSummary.safetyStatus === 'danger' && simDangerSummary.isOverbudget;
+      recordTest(
+        "[F-05] Budget Safety Cap Status: Bahaya / Saldo Minus (> 95%)",
+        "Budget Cap",
+        isDangerThreshold,
+        `Total Belanja: Rp 530.000 vs Saldo: Rp 500.000 (Minus Rp 30.000). Status: "${simDangerSummary.statusLabel}" (Merah + Shake Alert)`
+      );
+
+      // ==========================================
+      // SKENARIO 7: [F-06] Selesaikan & Simpan Belanja Bulan Ini (Arsip & Update Acuan)
+      // ==========================================
+      const currentCart = Store.getActiveCart();
+      const currentSummary = Calculator.calculateCartSummary(currentCart, budget.monthlyLimit);
+      const archivedSession = Store.archiveCurrentCart(currentSummary, "Belanja Bulanan Kos Rian");
+
+      const historyAfter = Store.getHistory();
+      const isArchived = historyAfter.length > 0 && historyAfter[0].id === archivedSession.id;
+      const isCartCleared = Store.getActiveCart().length === 0;
+      // Periksa apakah harga acuan Telur di katalog telah terupdate menjadi Rp 29.000
+      const updatedTelurInCatalog = Store.findCatalogItemByName("Telur Ayam 1kg");
+      const isCatalogUpdated = updatedTelurInCatalog && updatedTelurInCatalog.lastPrice === 29000;
+
+      recordTest(
+        "[F-06] Arsip Sesi Belanja & Pembaruan Acuan Harga Bulan Depan",
+        "Riwayat & Arsip",
+        isArchived && isCartCleared && isCatalogUpdated,
+        `Troli berhasil diarsipkan ke Riwayat (${archivedSession.itemCount} barang, ${Calculator.formatRupiah(archivedSession.totalAmount)}). Keranjang dikosongkan, dan harga acuan Telur diperbarui otomatis menjadi Rp 29.000 untuk bulan depan.`
+      );
+
+      // Final Summary Display
+      if (failedCount === 0) {
+        summaryIcon.innerText = '🎉';
+        summaryTitle.innerText = `Semua Skenario Organik Berhasil (${passedCount}/${tests.length} PASS)`;
+        summaryStats.innerText = 'Seluruh fungsionalitas SRS F-01 s/d F-06 terverifikasi sempurna dan akurat.';
+        summaryBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+        summaryBadge.innerText = '100% SUCCESS';
+      } else {
+        summaryIcon.innerText = '⚠️';
+        summaryTitle.innerText = `${failedCount} Skenario Gagal (${passedCount}/${tests.length} PASS)`;
+        summaryBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30';
+        summaryBadge.innerText = 'FAILED';
+      }
+    }
+
+    document.getElementById('btn-rerun').addEventListener('click', runOrganicSimulation);
+    // Auto run on load
+    runOrganicSimulation();
+  </script>
+</body>
+</html>
