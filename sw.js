@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smartgrocery-v3';
+const CACHE_NAME = 'smartgrocery-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const ASSETS_TO_CACHE = [
   './css/custom.css',
   './js/app.js',
   './js/auth.js',
+  './js/realtime.js',
   './js/calculator.js',
   './js/comparator.js',
   './js/seedData.js',

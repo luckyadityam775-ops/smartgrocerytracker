@@ -3,8 +3,9 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. Initialize auth & data store
+  // 1. Initialize auth, realtime & data store
   if (window.Auth) window.Auth.init();
+  if (window.Realtime) window.Realtime.init();
   Store.init();
 
   // 2. Initial UI render
@@ -17,6 +18,20 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.Auth) {
     window.Auth.onAuthChange(() => {
       UI.render();
+      if (window.Realtime && typeof window.Realtime.attachFirestoreSnapshots === 'function') {
+        window.Realtime.attachFirestoreSnapshots();
+      }
+    });
+  }
+
+  // 3b. React to Realtime onSnapshot updates from other tabs or Cloud Firestore
+  if (Store.onSnapshot) {
+    Store.onSnapshot((snapshot) => {
+      if (snapshot.source !== 'local') {
+        UI.render();
+        const sourceLabel = snapshot.source === 'firestore' ? 'Cloud Firestore' : 'Multi-Tab Realtime';
+        UI.showToast(`⚡ Sinkronisasi ${sourceLabel}: Data diperbarui seketika!`);
+      }
     });
   }
 

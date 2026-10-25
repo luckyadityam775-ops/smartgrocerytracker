@@ -54,6 +54,7 @@
   <!-- Dependencies -->
   <script src="./js/seedData.js"></script>
   <script src="./js/auth.js"></script>
+  <script src="./js/realtime.js"></script>
   <script src="./js/calculator.js"></script>
   <script src="./js/comparator.js"></script>
   <script src="./js/store.js"></script>
@@ -318,6 +319,35 @@
         isSitiIsolated,
         `Akun Siti Rahma berhasil dibuat. Memiliki saldo mandiri ${Calculator.formatRupiah(sitiBudget.monthlyLimit)} dengan troli awal bersih (0 barang).`
       );
+
+      // ==========================================
+      // SKENARIO 15: Realtime onSnapshot Synchronization Engine
+      // ==========================================
+      let snapshotReceived = false;
+      let snapshotType = null;
+      let snapshotSource = null;
+
+      if (window.Realtime) {
+        Realtime.init();
+        const unsub = Realtime.onSnapshot((snap) => {
+          snapshotReceived = true;
+          snapshotType = snap.type;
+          snapshotSource = snap.source;
+        });
+
+        // Trigger mutation
+        Store.notifyChange('cart');
+
+        const isRealtimeValid = snapshotReceived && snapshotType === 'cart';
+        if (typeof unsub === 'function') unsub();
+
+        recordTest(
+          "Realtime onSnapshot Synchronization Engine",
+          "Realtime Sync",
+          isRealtimeValid,
+          `Sistem onSnapshot listener aktif. Mendeteksi mutasi data seketika dengan callback snapshot (type: ${snapshotType}, source: ${snapshotSource}, broadcast: ${Realtime.getStatus().broadcastChannelAvailable ? 'Aktif' : 'Ready'}).`
+        );
+      }
 
       // Switch back to Rian
       Auth.switchAccount("user_rian");

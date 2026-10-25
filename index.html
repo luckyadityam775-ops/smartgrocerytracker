@@ -82,8 +82,15 @@
         </div>
       </div>
       
-      <div id="header-profile-btn" class="flex items-center gap-1.5 cursor-pointer touch-scale p-1 rounded-xl hover:bg-slate-800 transition" title="Ganti / Kelola Akun">
-        <!-- Injected by UI.renderAppHeader() -->
+      <div class="flex items-center gap-1.5">
+        <button id="btn-realtime-status" class="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 touch-scale transition-all" title="Status Realtime onSnapshot">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="realtime-badge-text">LIVE</span>
+        </button>
+
+        <div id="header-profile-btn" class="flex items-center gap-1.5 cursor-pointer touch-scale p-1 rounded-xl hover:bg-slate-800 transition" title="Ganti / Kelola Akun">
+          <!-- Injected by UI.renderAppHeader() -->
+        </div>
       </div>
     </header>
 
@@ -148,9 +155,14 @@
 
   </div>
 
+  <!-- Firebase SDK for Cloud Firestore Realtime onSnapshot (Optional Cloud Sync) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
   <!-- Application Logic Modules -->
   <script src="./js/seedData.js"></script>
   <script src="./js/auth.js"></script>
+  <script src="./js/realtime.js"></script>
   <script src="./js/calculator.js"></script>
   <script src="./js/comparator.js"></script>
   <script src="./js/store.js"></script>

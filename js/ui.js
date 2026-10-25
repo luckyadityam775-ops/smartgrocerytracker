@@ -1313,6 +1313,21 @@ const UI = {
   renderAppHeader() {
     const user = window.Auth ? window.Auth.getCurrentUser() : null;
     const profileContainer = document.getElementById('header-profile-btn');
+    const realtimeBadge = document.getElementById('btn-realtime-status');
+    const realtimeText = document.getElementById('realtime-badge-text');
+
+    if (realtimeBadge && window.Realtime) {
+      const status = window.Realtime.getStatus();
+      if (status.isFirestoreActive) {
+        realtimeBadge.className = 'flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-400 border border-sky-500/30 touch-scale transition-all';
+        if (realtimeText) realtimeText.textContent = 'CLOUD';
+      } else {
+        realtimeBadge.className = 'flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 touch-scale transition-all';
+        if (realtimeText) realtimeText.textContent = 'LIVE';
+      }
+      realtimeBadge.onclick = () => this.openRealtimeModal();
+    }
+
     if (!profileContainer) return;
 
     if (!user) {
@@ -1603,6 +1618,193 @@ const UI = {
         this.render();
       } else {
         alert(res.message);
+      }
+    });
+  },
+
+  /**
+   * Realtime & onSnapshot Configuration Modal
+   */
+  openRealtimeModal() {
+    const modal = document.getElementById('modal-container');
+    if (!modal) return;
+
+    const status = window.Realtime ? window.Realtime.getStatus() : { isFirestoreActive: false, broadcastChannelAvailable: true };
+    const savedConfig = window.Realtime ? window.Realtime.getFirebaseConfig() || {} : {};
+
+    modal.innerHTML = `
+      <div class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
+        <div class="bg-slate-900 border-t sm:border border-slate-700/80 w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl animate-slide-up max-h-[90vh] overflow-y-auto">
+          
+          <!-- Header -->
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                <i data-lucide="radio" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-extrabold text-white">Realtime & onSnapshot</h3>
+                <p class="text-[10px] text-slate-400">Sinkronisasi Instan Antar-Layar & Cloud</p>
+              </div>
+            </div>
+            <button id="modal-realtime-close" class="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-slate-800">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Section 1: Multi-Tab Local onSnapshot -->
+          <div class="mt-4 p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/50">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span class="text-xs font-bold text-white">Multi-Tab & Multi-Window</span>
+              </div>
+              <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                AKTIF (0ms)
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-300 mt-2 leading-relaxed">
+              Teknologi <strong class="text-emerald-400">BroadcastChannel API</strong> & <strong class="text-emerald-400">onSnapshot</strong> aktif! Buka aplikasi ini di 2 tab browser atau jendela terpisah berdampingan. Setiap barang yang dimasukkan atau kuantitas yang ditekan di tab satu akan langsung terupdate di tab lain secara otomatis seketika.
+            </p>
+            <button id="btn-realtime-ping" class="mt-3 w-full py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold flex items-center justify-center gap-1.5 touch-scale transition">
+              <i data-lucide="zap" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Kirim Sinyal Uji Realtime (Broadcast Ping)</span>
+            </button>
+          </div>
+
+          <!-- Section 2: Cloud Firestore onSnapshot -->
+          <div class="mt-4 p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/50">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="cloud" class="w-4 h-4 ${status.isFirestoreActive ? 'text-sky-400' : 'text-slate-400'}"></i>
+                <span class="text-xs font-bold text-white">Google Cloud Firestore</span>
+              </div>
+              <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${status.isFirestoreActive ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30' : 'bg-slate-700 text-slate-300'}">
+                ${status.isFirestoreActive ? 'TERHUBUNG' : 'MODE LOKAL'}
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-300 mt-2 leading-relaxed">
+              Hubungkan ke Firebase untuk sinkronisasi antar HP dan Laptop di mana saja secara nirkabel dengan listener <code class="text-sky-300 bg-slate-900 px-1 rounded">db.collection().onSnapshot()</code>.
+            </p>
+
+            <!-- Firebase Config Form -->
+            <form id="form-firebase-config" class="mt-3 space-y-2">
+              <div>
+                <label class="text-[10px] font-semibold text-slate-400 block mb-0.5">Firebase API Key</label>
+                <input id="fb-apiKey" type="text" placeholder="AIzaSy..." value="${savedConfig.apiKey || ''}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-[10px] font-semibold text-slate-400 block mb-0.5">Project ID</label>
+                  <input id="fb-projectId" type="text" placeholder="my-grocery-app" value="${savedConfig.projectId || ''}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
+                </div>
+                <div>
+                  <label class="text-[10px] font-semibold text-slate-400 block mb-0.5">Auth Domain</label>
+                  <input id="fb-authDomain" type="text" placeholder="app.firebaseapp.com" value="${savedConfig.authDomain || ''}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-[10px] font-semibold text-slate-400 block mb-0.5">App ID</label>
+                  <input id="fb-appId" type="text" placeholder="1:12345:web:abcdef" value="${savedConfig.appId || ''}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
+                </div>
+                <div>
+                  <label class="text-[10px] font-semibold text-slate-400 block mb-0.5">Storage Bucket</label>
+                  <input id="fb-storageBucket" type="text" placeholder="app.appspot.com" value="${savedConfig.storageBucket || ''}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 pt-2">
+                <button type="submit" class="flex-1 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-lg shadow-sky-900/30 touch-scale transition">
+                  ${status.isFirestoreActive ? 'Perbarui Konfigurasi' : 'Hubungkan Cloud Firestore'}
+                </button>
+                ${status.isFirestoreActive ? `
+                  <button type="button" id="btn-disconnect-firestore" class="px-3 py-2 rounded-xl bg-rose-600/20 text-rose-300 border border-rose-500/30 font-bold text-xs hover:bg-rose-600/30 touch-scale transition">
+                    Putus
+                  </button>
+                ` : ''}
+              </div>
+            </form>
+          </div>
+
+          <!-- Bottom Dismiss Button -->
+          <div class="mt-4">
+            <button id="modal-realtime-done" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition">
+              Tutup
+            </button>
+          </div>
+
+        </div>
+      </div>
+    `;
+
+    modal.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+    this.bindRealtimeModalEvents(modal);
+  },
+
+  /**
+   * Bind Realtime Modal events
+   */
+  bindRealtimeModalEvents(modal) {
+    const closeModal = () => modal.classList.add('hidden');
+
+    document.getElementById('modal-realtime-close')?.addEventListener('click', closeModal);
+    document.getElementById('modal-realtime-done')?.addEventListener('click', closeModal);
+
+    const backdrop = modal.querySelector('.fixed.inset-0');
+    if (backdrop) {
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) closeModal();
+      });
+    }
+
+    // Ping test button
+    document.getElementById('btn-realtime-ping')?.addEventListener('click', () => {
+      this.vibrate([30, 40]);
+      Store.notifyChange('cart');
+      this.showToast('📡 Sinyal Realtime terkirim ke seluruh tab & perangkat!');
+    });
+
+    // Form Firebase Save
+    const formFb = document.getElementById('form-firebase-config');
+    if (formFb) {
+      formFb.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const apiKey = document.getElementById('fb-apiKey').value.trim();
+        const projectId = document.getElementById('fb-projectId').value.trim();
+        const authDomain = document.getElementById('fb-authDomain').value.trim();
+        const appId = document.getElementById('fb-appId').value.trim();
+        const storageBucket = document.getElementById('fb-storageBucket').value.trim();
+
+        if (!apiKey || !projectId) {
+          alert('Mohon isi minimal API Key dan Project ID dari konsol Firebase.');
+          return;
+        }
+
+        const config = { apiKey, projectId, authDomain, appId, storageBucket };
+        if (window.Realtime) {
+          const success = window.Realtime.saveFirebaseConfig(config);
+          if (success) {
+            this.vibrate([50, 100]);
+            this.showToast('🔥 Berhasil terhubung ke Cloud Firestore Realtime onSnapshot!');
+            closeModal();
+            this.render();
+          } else {
+            alert('Gagal menghubungkan ke Firebase. Mohon periksa API Key dan koneksi internet.');
+          }
+        }
+      });
+    }
+
+    // Disconnect Firestore
+    document.getElementById('btn-disconnect-firestore')?.addEventListener('click', () => {
+      if (window.Realtime) {
+        window.Realtime.saveFirebaseConfig(null);
+        this.vibrate(30);
+        this.showToast('Koneksi Firestore diputus. Kembali ke Mode Realtime Multi-Tab lokal.');
+        closeModal();
+        this.render();
       }
     });
   },

@@ -295,13 +295,78 @@ const Store = {
     return Object.values(breakdown).sort((a, b) => b.total - a.total);
   },
 
-  // ------------------ EVENTS ------------------
+  // ------------------ REALTIME & ON_SNAPSHOT EVENTS ------------------
   listeners: [],
   onChange(fn) {
     this.listeners.push(fn);
   },
+
+  /**
+   * Subscribe to real-time snapshot events
+   * @param {Function} fn (snapshot) => void
+   */
+  onSnapshot(fn) {
+    if (window.Realtime && typeof window.Realtime.onSnapshot === 'function') {
+      return window.Realtime.onSnapshot(fn);
+    }
+    this.listeners.push(fn);
+    return () => {
+      const idx = this.listeners.indexOf(fn);
+      if (idx !== -1) this.listeners.splice(idx, 1);
+    };
+  },
+
+  /**
+   * Notify local UI listeners only (without re-broadcasting)
+   */
+  notifyChangeLocally(type) {
+    this.listeners.forEach(fn => {
+      try {
+        fn(type);
+      } catch (e) {
+        console.error(e);
+      }
+    });
+  },
+
+  /**
+   * Notify change locally AND broadcast snapshot across tabs and to Cloud Firestore
+   */
   notifyChange(type) {
-    this.listeners.forEach(fn => fn(type));
+    this.notifyChangeLocally(type);
+
+    if (window.Realtime && typeof window.Realtime.broadcast === 'function') {
+      let data = null;
+      if (type === 'cart') data = this.getActiveCart();
+      else if (type === 'budget') data = this.getBudgetSettings();
+      else if (type === 'cart_discount') data = this.getCartDiscount();
+      else if (type === 'history') data = this.getShoppingHistory();
+      window.Realtime.broadcast(type, data);
+    }
+  },
+
+  /**
+   * Apply remote incoming snapshot without triggering broadcast echo
+   */
+  applySnapshot(snapshot) {
+    if (!snapshot) return;
+    try {
+      if (snapshot.type === 'cart' && Array.isArray(snapshot.data)) {
+        localStorage.setItem(this.getKey('cart'), JSON.stringify(snapshot.data));
+        if (snapshot.discount) {
+          localStorage.setItem(this.getKey('cart_discount'), JSON.stringify(snapshot.discount));
+        }
+      } else if (snapshot.type === 'budget' && snapshot.data) {
+        localStorage.setItem(this.getKey('budget'), JSON.stringify(snapshot.data));
+      } else if (snapshot.type === 'cart_discount' && snapshot.data) {
+        localStorage.setItem(this.getKey('cart_discount'), JSON.stringify(snapshot.data));
+      } else if (snapshot.type === 'history' && Array.isArray(snapshot.data)) {
+        localStorage.setItem(this.getKey('history'), JSON.stringify(snapshot.data));
+      }
+      this.notifyChangeLocally(snapshot.type);
+    } catch (e) {
+      console.warn('[Store] applySnapshot error:', e);
+    }
   },
 
   resetDemo() {
