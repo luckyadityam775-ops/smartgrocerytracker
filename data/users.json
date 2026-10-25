@@ -1,0 +1,22 @@
+﻿[
+    {
+        "id":  "user_rian",
+        "name":  "Rian",
+        "fullName":  "Rian (Anak Rantau)",
+        "email":  "rian@kost.id",
+        "password":  "123",
+        "role":  "Siswa Rantau",
+        "avatarBg":  "bg-emerald-600",
+        "avatarLetter":  "R"
+    },
+    {
+        "id":  "user_aditya",
+        "name":  "Aditya",
+        "fullName":  "Aditya (Mahasiswa)",
+        "email":  "aditya@kampus.id",
+        "password":  "123",
+        "role":  "Mahasiswa",
+        "avatarBg":  "bg-indigo-600",
+        "avatarLetter":  "A"
+    }
+]

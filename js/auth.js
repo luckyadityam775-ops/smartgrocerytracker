@@ -18,13 +18,13 @@ const Auth = {
   init() {
     let users = this.getAllUsers();
     if (!users || users.length === 0) {
-      users = window.SEED_DATA.users;
+      users = window.SEED_DATA && window.SEED_DATA.users ? [...window.SEED_DATA.users] : [];
       this.saveUsers(users);
 
       // Seed data for each initial user
       users.forEach(user => {
         const seedKey = `userData_${user.id}`;
-        if (window.SEED_DATA[seedKey]) {
+        if (window.SEED_DATA && window.SEED_DATA[seedKey]) {
           const uData = window.SEED_DATA[seedKey];
           localStorage.setItem(`smartgrocery_${user.id}_budget`, JSON.stringify(uData.budgetSettings));
           localStorage.setItem(`smartgrocery_${user.id}_cart`, JSON.stringify(uData.activeCart));
@@ -36,8 +36,33 @@ const Auth = {
     }
 
     // Default to first user (Rian) if no active user session
-    if (!this.getCurrentUser()) {
+    if (!this.getCurrentUser() && users.length > 0) {
       this.setActiveUser(users[0]);
+    }
+
+    // Asynchronously synchronize with server database file /api/users
+    this.syncWithServerDatabase();
+  },
+
+  async syncWithServerDatabase() {
+    try {
+      const resp = await fetch('./api/users');
+      if (resp.ok) {
+        const serverUsers = await resp.json();
+        if (Array.isArray(serverUsers) && serverUsers.length > 0) {
+          const localUsers = this.getAllUsers();
+          const merged = [...localUsers];
+          serverUsers.forEach(su => {
+            if (!merged.some(lu => lu.email && lu.email.toLowerCase() === su.email.toLowerCase())) {
+              merged.push(su);
+            }
+          });
+          this.saveUsers(merged);
+          if (window.UI) window.UI.render();
+        }
+      }
+    } catch (e) {
+      // Standalone / offline mode
     }
   },
 
@@ -197,6 +222,15 @@ const Auth = {
 
     users.push(newUser);
     this.saveUsers(users);
+
+    // Persist newly registered user to server database
+    try {
+      fetch('./api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser)
+      }).catch(() => {});
+    } catch (e) {}
 
     // Initialize completely isolated data scope for this new user
     const userBudget = {

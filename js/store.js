@@ -370,7 +370,17 @@ const Store = {
   },
 
   resetDemo() {
-    localStorage.clear();
+    // Preserve registered user accounts and their budgets!
+    const usersJson = localStorage.getItem('smartgrocery_users_v2');
+    const activeUserJson = localStorage.getItem('smartgrocery_active_user_v2');
+
+    // Only clear active cart and demo temporary states
+    localStorage.removeItem('smartgrocery_user_rian_cart');
+    localStorage.removeItem('smartgrocery_user_aditya_cart');
+
+    if (usersJson) localStorage.setItem('smartgrocery_users_v2', usersJson);
+    if (activeUserJson) localStorage.setItem('smartgrocery_active_user_v2', activeUserJson);
+
     if (window.Auth) {
       window.Auth.init();
     }
