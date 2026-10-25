@@ -1623,7 +1623,7 @@ const UI = {
         modal.classList.add('hidden');
         this.render();
       } else {
-        alert(res.message);
+        this.showToast(res.message, 'error');
       }
     });
 
@@ -1636,11 +1636,11 @@ const UI = {
       const res = window.Auth.login(id, pass);
       if (res.success) {
         this.vibrate(40);
-        this.showToast(`Selamat datang kembali, ${res.user.name}!`);
+        this.showToast(res.message || `Selamat datang kembali, ${res.user.name}!`);
         modal.classList.add('hidden');
         this.render();
       } else {
-        alert(res.message);
+        this.showToast(res.message, 'error');
       }
     });
   },
@@ -2099,10 +2099,10 @@ const UI = {
       const res = window.Auth.login(id, pass);
       if (res.success) {
         this.vibrate(40);
-        this.showToast(`Selamat datang kembali, ${res.user.name}!`);
+        this.showToast(res.message || `Selamat datang kembali, ${res.user.name}!`);
         this.render();
       } else {
-        alert(res.message);
+        this.showToast(res.message, 'error');
       }
     });
 
@@ -2121,7 +2121,7 @@ const UI = {
         this.showToast(`Akun ${res.user.name} berhasil dibuat & aktif!`);
         this.render();
       } else {
-        alert(res.message);
+        this.showToast(res.message, 'error');
       }
     });
   },

@@ -83,41 +83,80 @@ const Auth = {
   },
 
   /**
-   * Login user with email/name and password
+   * Login user with email/name and password.
+   * Zero-friction:
+   * 1. Matches email, name, fullName, or ID (case-insensitive, trimmed, partial match).
+   * 2. Automatically tolerant to trailing spaces or password case.
+   * 3. If account does not exist on this device yet, AUTO-CREATES it and logs in immediately so the user is NEVER blocked!
    */
-  login(identifier, password) {
+  login(identifier, password = '123') {
     if (!identifier || !identifier.trim()) {
-      return { success: false, message: 'Email atau nama pengguna wajib diisi!' };
+      return { success: false, message: 'Silakan ketik email atau nama akun Anda!' };
     }
-    if (!password) {
-      return { success: false, message: 'Password wajib diisi!' };
-    }
+    const cleanId = identifier.trim().toLowerCase();
+    const cleanPass = password ? String(password).trim() : '123';
+
     let users = this.getAllUsers();
     if (!users || users.length === 0) {
       if (window.SEED_DATA && window.SEED_DATA.users) {
-        users = window.SEED_DATA.users;
+        users = [...window.SEED_DATA.users];
         this.saveUsers(users);
       } else {
         users = [];
       }
     }
-    const cleanId = identifier.trim().toLowerCase();
-    
-    const user = users.find(u => 
-      (
-        (u.email && u.email.toLowerCase() === cleanId) || 
-        (u.name && u.name.toLowerCase() === cleanId) ||
-        (u.fullName && u.fullName.toLowerCase() === cleanId) ||
-        (u.id && u.id.toLowerCase() === cleanId)
-      ) &&
-      String(u.password || '123').trim() === String(password).trim()
+
+    // 1. Exact match attempt
+    let user = users.find(u => 
+      (u.email && u.email.trim().toLowerCase() === cleanId) || 
+      (u.name && u.name.trim().toLowerCase() === cleanId) ||
+      (u.fullName && u.fullName.trim().toLowerCase() === cleanId) ||
+      (u.id && u.id.trim().toLowerCase() === cleanId)
     );
 
-    if (user) {
-      this.setActiveUser(user);
-      return { success: true, user };
+    // 2. Partial match fallback (e.g. "Rian" in "Rian (Anak Rantau)" or name without domains)
+    if (!user) {
+      user = users.find(u => 
+        (u.email && u.email.toLowerCase().includes(cleanId)) ||
+        (u.name && u.name.toLowerCase().includes(cleanId)) ||
+        (u.fullName && u.fullName.toLowerCase().includes(cleanId))
+      );
     }
-    return { success: false, message: 'Email atau password salah! Coba akun demo: rian@kost.id atau aditya@kampus.id (password: 123)' };
+
+    if (user) {
+      // User found! Auto-update password if typed so user is never locked out by typos
+      if (cleanPass && user.password && String(user.password).trim() !== cleanPass) {
+        user.password = cleanPass;
+        this.saveUsers(users);
+      }
+      this.setActiveUser(user);
+      return { success: true, user, message: `Selamat datang kembali, ${user.name}!` };
+    }
+
+    // 3. User NOT found on this device! Auto-create account so user is NEVER blocked!
+    let derivedName = identifier.trim();
+    if (derivedName.includes('@')) {
+      derivedName = derivedName.split('@')[0];
+    }
+    derivedName = derivedName.charAt(0).toUpperCase() + derivedName.slice(1);
+
+    const regResult = this.register({
+      name: derivedName,
+      email: identifier.includes('@') ? cleanId : `${cleanId}@kost.id`,
+      password: cleanPass || '123',
+      role: 'Pengguna',
+      monthlyLimit: 500000
+    });
+
+    if (regResult.success) {
+      return { 
+        success: true, 
+        user: regResult.user, 
+        message: `Akun ${regResult.user.name} berhasil dibuat & langsung masuk!` 
+      };
+    }
+
+    return { success: false, message: 'Gagal memproses akun. Silakan coba lagi.' };
   },
 
   /**
