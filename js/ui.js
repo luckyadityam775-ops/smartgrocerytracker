@@ -187,6 +187,7 @@ const UI = {
                   </span>
                 </div>
                 <h4 class="text-sm font-bold text-white tracking-tight leading-tight truncate">${item.name}</h4>
+              </div>
               <div class="flex items-center gap-1 shrink-0">
                 <button class="btn-edit-item p-1.5 rounded-xl bg-slate-800/60 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors touch-scale" data-id="${item.id}" title="Edit Barang">
                   <i data-lucide="edit-2" class="w-4 h-4"></i>
@@ -1292,7 +1293,7 @@ const UI = {
     });
 
     // Toggle content views
-    ['belanja', 'riwayat', 'anggaran'].forEach(id => {
+    ['belanja', 'riwayat', 'anggaran', 'akun'].forEach(id => {
       const el = document.getElementById(`tab-content-${id}`);
       if (el) {
         if (id === tabId) {
@@ -1337,22 +1338,22 @@ const UI = {
           <span>Masuk</span>
         </button>
       `;
-      profileContainer.onclick = () => this.openAuthModal();
+      profileContainer.onclick = () => this.switchTab('akun');
       return;
     }
 
     profileContainer.innerHTML = `
-      <div class="flex items-center gap-2 cursor-pointer touch-scale">
-        <div class="text-right hidden sm:block">
-          <span class="text-xs font-bold text-white block leading-none truncate max-w-[100px]">${user.name}</span>
-          <span class="text-[9px] text-emerald-400 font-semibold">${user.role || 'Pengguna'}</span>
+      <div class="flex items-center gap-1.5 cursor-pointer touch-scale p-1 rounded-xl hover:bg-slate-800 transition">
+        <div class="text-right">
+          <span class="text-xs font-bold text-white block leading-none truncate max-w-[70px] sm:max-w-[100px]">${user.name}</span>
+          <span class="text-[9px] text-emerald-400 font-semibold hidden sm:block">${user.role || 'Pengguna'}</span>
         </div>
-        <div class="w-7 h-7 rounded-full ${user.avatarBg || 'bg-emerald-600'} text-white font-extrabold flex items-center justify-center text-xs shadow-md border border-white/20">
+        <div class="w-7 h-7 rounded-full ${user.avatarBg || 'bg-emerald-600'} text-white font-extrabold flex items-center justify-center text-xs shadow-md border border-white/20 shrink-0">
           ${user.avatarLetter || user.name.charAt(0).toUpperCase()}
         </div>
       </div>
     `;
-    profileContainer.onclick = () => this.openAuthModal();
+    profileContainer.onclick = () => this.switchTab('akun');
     if (window.lucide) lucide.createIcons();
   },
 
@@ -1393,7 +1394,7 @@ const UI = {
     const otherUsersHtml = otherUsers.length > 0 ? otherUsers.map(u => {
       const uBudget = JSON.parse(localStorage.getItem(`smartgrocery_${u.id}_budget`) || '{"monthlyLimit":500000}');
       return `
-        <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60 hover:border-emerald-500/40 transition mb-2">
+        <div class="card-switch-account cursor-pointer flex items-center justify-between p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60 hover:border-emerald-500/40 hover:bg-slate-800 transition mb-2 touch-scale" data-id="${u.id}">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-full ${u.avatarBg || 'bg-slate-700'} text-white font-bold flex items-center justify-center text-xs">
               ${u.avatarLetter || u.name.charAt(0)}
@@ -1514,6 +1515,14 @@ const UI = {
 
             <!-- Form: Login User -->
             <form id="form-login-user" class="space-y-3 hidden">
+              <div class="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 mb-2">
+                <span class="text-[10px] text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">Isi Cepat Akun Demo:</span>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" class="btn-quick-fill-auth flex-1 py-1.5 px-2 rounded-lg bg-slate-800 text-[11px] text-emerald-400 font-bold border border-slate-700 hover:bg-slate-700 touch-scale" data-email="rian@kost.id">Rian (123)</button>
+                  <button type="button" class="btn-quick-fill-auth flex-1 py-1.5 px-2 rounded-lg bg-slate-800 text-[11px] text-indigo-400 font-bold border border-slate-700 hover:bg-slate-700 touch-scale" data-email="aditya@kampus.id">Aditya (123)</button>
+                </div>
+              </div>
+
               <div>
                 <label class="block text-[11px] font-semibold text-slate-300 mb-1">Email atau Nama Pengguna *</label>
                 <input type="text" id="login-identifier" required placeholder="rian@kost.id atau aditya@kampus.id" 
@@ -1549,10 +1558,11 @@ const UI = {
       });
     }
 
-    // Bind 1-tap switch buttons
-    document.querySelectorAll('.btn-switch-account').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const targetId = e.currentTarget.getAttribute('data-id');
+    // Bind 1-tap card and button switch
+    modal.querySelectorAll('.card-switch-account, .btn-switch-account').forEach(el => {
+      el.addEventListener('click', (e) => {
+        const targetId = el.getAttribute('data-id') || el.closest('[data-id]')?.getAttribute('data-id');
+        if (!targetId) return;
         const success = window.Auth.switchAccount(targetId);
         if (success) {
           const user = window.Auth.getCurrentUser();
@@ -1560,6 +1570,19 @@ const UI = {
           this.showToast(`Beralih ke akun ${user.name}! Data belanja diperbarui.`);
           modal.classList.add('hidden');
           this.render();
+        }
+      });
+    });
+
+    // Bind quick fill demo buttons in auth modal
+    modal.querySelectorAll('.btn-quick-fill-auth').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const email = btn.getAttribute('data-email');
+        const idInput = document.getElementById('login-identifier');
+        const passInput = document.getElementById('login-password');
+        if (idInput && passInput) {
+          idInput.value = email;
+          passInput.value = '123';
         }
       });
     });
@@ -1810,6 +1833,300 @@ const UI = {
   },
 
   /**
+   * Render Akun (Account & Profiles) View
+   */
+  renderAkunTab(summary) {
+    const container = document.getElementById('tab-content-akun');
+    if (!container) return;
+
+    const currentUser = window.Auth ? window.Auth.getCurrentUser() : null;
+    const allUsers = window.Auth ? window.Auth.getAllUsers() : [];
+    const budget = Store.getBudgetSettings();
+    const cart = Store.getActiveCart();
+
+    // Accounts list HTML
+    const accountsHtml = allUsers.map(u => {
+      const isCurrent = currentUser && u.id === currentUser.id;
+      let userBudgetLimit = 500000;
+      try {
+        const uBudgetRaw = localStorage.getItem(`smartgrocery_${u.id}_budget`);
+        if (uBudgetRaw) userBudgetLimit = JSON.parse(uBudgetRaw).monthlyLimit || 500000;
+      } catch (e) {}
+
+      return `
+        <div class="cursor-pointer rounded-2xl p-3.5 mb-2.5 transition-all duration-200 border ${
+          isCurrent 
+            ? 'bg-emerald-950/40 border-emerald-500/50 shadow-md shadow-emerald-950/50 ring-1 ring-emerald-500/30' 
+            : 'bg-slate-800/70 border-slate-700/60 hover:border-slate-500 hover:bg-slate-800'
+        } card-switch-account flex items-center justify-between" data-id="${u.id}">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl ${u.avatarBg || 'bg-slate-700'} text-white font-extrabold flex items-center justify-center text-sm shadow-md border border-white/10 shrink-0">
+              ${u.avatarLetter || u.name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-white block leading-tight">${u.name}</span>
+                ${isCurrent ? `
+                  <span class="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[9px] font-extrabold border border-emerald-500/30 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Aktif
+                  </span>
+                ` : ''}
+              </div>
+              <span class="text-[10px] text-slate-400 block">${u.email} • Saldo: ${Calculator.formatRupiah(userBudgetLimit)}</span>
+            </div>
+          </div>
+
+          <div>
+            ${isCurrent ? `
+              <span class="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+              </span>
+            ` : `
+              <button class="btn-select-account px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs touch-scale transition shadow-md shadow-emerald-900/30" data-id="${u.id}">
+                Pilih
+              </button>
+            `}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <div class="px-4 py-3 pb-32">
+        <!-- Profile Header Card -->
+        ${currentUser ? `
+          <div class="bg-gradient-to-r from-emerald-950/70 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-3xl p-4 mb-4 shadow-xl">
+            <div class="flex items-center gap-3.5 mb-3">
+              <div class="w-14 h-14 rounded-2xl ${currentUser.avatarBg || 'bg-emerald-600'} text-white font-extrabold flex items-center justify-center text-xl shadow-lg border-2 border-white/20 shrink-0">
+                ${currentUser.avatarLetter || currentUser.name.charAt(0).toUpperCase()}
+              </div>
+              <div class="flex-1 min-w-0">
+                <span class="text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 inline-block mb-1">
+                  Akun Sedang Digunakan
+                </span>
+                <h3 class="text-base font-extrabold text-white truncate leading-tight">${currentUser.fullName || currentUser.name}</h3>
+                <p class="text-xs text-slate-400 truncate">${currentUser.email}</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-3 border-t border-slate-800/80">
+              <div class="bg-slate-900/80 rounded-xl p-2.5 border border-slate-800 text-center">
+                <span class="text-[10px] text-slate-400 block uppercase font-medium">Batas Anggaran</span>
+                <span class="text-xs font-extrabold text-white mt-0.5 block">${Calculator.formatRupiah(budget.monthlyLimit)}</span>
+              </div>
+              <div class="bg-slate-900/80 rounded-xl p-2.5 border border-slate-800 text-center">
+                <span class="text-[10px] text-slate-400 block uppercase font-medium">Barang di Troli</span>
+                <span class="text-xs font-extrabold text-emerald-400 mt-0.5 block">${cart.length} item</span>
+              </div>
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- Section: Pilih & Beralih Akun (1-Tap Langsung) -->
+        <div class="mb-5">
+          <div class="flex items-center justify-between mb-2.5">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+              <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i>
+              <span>Daftar Akun di Aplikasi (1-Tap)</span>
+            </h4>
+            <span class="text-[10px] text-slate-400">${allUsers.length} akun tersimpan</span>
+          </div>
+
+          <div class="space-y-1">
+            ${accountsHtml}
+          </div>
+          <p class="text-[10px] text-slate-400 mt-1 italic">
+            *Ketuk pada kartu akun mana saja untuk langsung beralih dan memuat troli belanja milik akun tersebut seketika.
+          </p>
+        </div>
+
+        <!-- Section: Masuk ke Akun Lain & Daftar Baru -->
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-xl">
+          <div class="flex rounded-xl bg-slate-950 p-1 mb-4 border border-slate-800">
+            <button id="tab-sub-login" class="flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white transition">
+              Masuk ke Akun
+            </button>
+            <button id="tab-sub-register" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition">
+              + Buat Akun Baru
+            </button>
+          </div>
+
+          <!-- Quick Fill Demo Buttons -->
+          <div id="quick-demo-accounts" class="mb-3.5 p-3 rounded-2xl bg-slate-800/40 border border-slate-700/50">
+            <span class="text-[10px] font-bold text-slate-400 block mb-2 uppercase tracking-wider">Coba Akun Demo Cepat:</span>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" class="btn-demo-quick-login py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-left border border-slate-700 touch-scale transition" data-user="rian">
+                <span class="text-xs font-bold text-white block">👤 Rian</span>
+                <span class="text-[9px] text-emerald-400">Siswa Rantau (500rb)</span>
+              </button>
+              <button type="button" class="btn-demo-quick-login py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-left border border-slate-700 touch-scale transition" data-user="aditya">
+                <span class="text-xs font-bold text-white block">👤 Aditya</span>
+                <span class="text-[9px] text-indigo-400">Mahasiswa (750rb)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Form: Login -->
+          <form id="form-tab-login" class="space-y-3">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Email atau Nama Akun *</label>
+              <input type="text" id="tab-login-identifier" required placeholder="Contoh: rian@kost.id atau Rian" 
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Password *</label>
+              <input type="password" id="tab-login-password" required placeholder="Password Anda (Demo: 123)" 
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <button type="submit" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-900/40 touch-scale">
+              Masuk ke Akun
+            </button>
+          </form>
+
+          <!-- Form: Register -->
+          <form id="form-tab-register" class="space-y-3 hidden">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Nama Lengkap *</label>
+              <input type="text" id="tab-reg-name" required placeholder="Contoh: Siti Rahma" 
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Status</label>
+                <input type="text" id="tab-reg-role" placeholder="Mahasiswa" 
+                  class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Batas Saldo (Rp)</label>
+                <input type="number" id="tab-reg-budget" value="500000" step="50000" 
+                  class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Email *</label>
+              <input type="email" id="tab-reg-email" required placeholder="nama@email.com" 
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Password *</label>
+              <input type="password" id="tab-reg-password" required placeholder="Minimal 3 karakter" 
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <button type="submit" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-900/40 touch-scale">
+              Daftar & Langsung Masuk
+            </button>
+          </form>
+        </div>
+      </div>
+    `;
+
+    lucide.createIcons();
+    this.bindAkunEvents();
+  },
+
+  /**
+   * Bind events for Akun tab
+   */
+  bindAkunEvents() {
+    // 1-tap card click to switch
+    document.querySelectorAll('.card-switch-account').forEach(card => {
+      card.addEventListener('click', (e) => {
+        const targetId = card.getAttribute('data-id');
+        const success = window.Auth.switchAccount(targetId);
+        if (success) {
+          const user = window.Auth.getCurrentUser();
+          this.vibrate(40);
+          this.showToast(`Beralih ke akun ${user.name}! Data belanja diperbarui.`);
+          this.render();
+        }
+      });
+    });
+
+    // Quick demo buttons
+    document.querySelectorAll('.btn-demo-quick-login').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const userType = btn.getAttribute('data-user');
+        if (userType === 'rian') {
+          window.Auth.switchAccount('user_rian');
+          this.vibrate(40);
+          this.showToast('Masuk sebagai Rian (Anak Rantau)');
+          this.render();
+        } else if (userType === 'aditya') {
+          window.Auth.switchAccount('user_aditya');
+          this.vibrate(40);
+          this.showToast('Masuk sebagai Aditya (Mahasiswa)');
+          this.render();
+        }
+      });
+    });
+
+    // Toggle sub-tabs
+    const subLoginBtn = document.getElementById('tab-sub-login');
+    const subRegBtn = document.getElementById('tab-sub-register');
+    const formLogin = document.getElementById('form-tab-login');
+    const formReg = document.getElementById('form-tab-register');
+    const quickDemo = document.getElementById('quick-demo-accounts');
+
+    subLoginBtn?.addEventListener('click', () => {
+      subLoginBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white transition';
+      subRegBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition';
+      formLogin.classList.remove('hidden');
+      formReg.classList.add('hidden');
+      if (quickDemo) quickDemo.classList.remove('hidden');
+    });
+
+    subRegBtn?.addEventListener('click', () => {
+      subRegBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white transition';
+      subLoginBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition';
+      formReg.classList.remove('hidden');
+      formLogin.classList.add('hidden');
+      if (quickDemo) quickDemo.classList.add('hidden');
+    });
+
+    // Handle Login Submit
+    formLogin?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = document.getElementById('tab-login-identifier').value;
+      const pass = document.getElementById('tab-login-password').value;
+
+      const res = window.Auth.login(id, pass);
+      if (res.success) {
+        this.vibrate(40);
+        this.showToast(`Selamat datang kembali, ${res.user.name}!`);
+        this.render();
+      } else {
+        alert(res.message);
+      }
+    });
+
+    // Handle Register Submit
+    formReg?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('tab-reg-name').value;
+      const role = document.getElementById('tab-reg-role').value || 'Anak Kost';
+      const budgetLimit = document.getElementById('tab-reg-budget').value || 500000;
+      const email = document.getElementById('tab-reg-email').value;
+      const password = document.getElementById('tab-reg-password').value;
+
+      const res = window.Auth.register({ name, role, email, password, monthlyLimit: budgetLimit });
+      if (res.success) {
+        this.vibrate([50, 100]);
+        this.showToast(`Akun ${res.user.name} berhasil dibuat & aktif!`);
+        this.render();
+      } else {
+        alert(res.message);
+      }
+    });
+  },
+
+  /**
    * Full App Render Loop
    */
   render() {
@@ -1828,6 +2145,8 @@ const UI = {
       this.renderRiwayatTab();
     } else if (this.activeTab === 'anggaran') {
       this.renderAnggaranTab(summary);
+    } else if (this.activeTab === 'akun') {
+      this.renderAkunTab(summary);
     }
   }
 };

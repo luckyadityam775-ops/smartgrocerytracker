@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const requestedTab = urlParams.get('tab');
   const requestedAction = urlParams.get('action');
 
-  if (requestedTab && ['belanja', 'riwayat', 'anggaran'].includes(requestedTab)) {
+  if (requestedTab && ['belanja', 'riwayat', 'anggaran', 'akun'].includes(requestedTab)) {
     UI.switchTab(requestedTab);
   } else {
     UI.switchTab('belanja');

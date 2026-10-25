@@ -92,19 +92,32 @@ const Auth = {
     if (!password) {
       return { success: false, message: 'Password wajib diisi!' };
     }
-    const users = this.getAllUsers();
+    let users = this.getAllUsers();
+    if (!users || users.length === 0) {
+      if (window.SEED_DATA && window.SEED_DATA.users) {
+        users = window.SEED_DATA.users;
+        this.saveUsers(users);
+      } else {
+        users = [];
+      }
+    }
     const cleanId = identifier.trim().toLowerCase();
     
     const user = users.find(u => 
-      (u.email.toLowerCase() === cleanId || u.name.toLowerCase() === cleanId) &&
-      u.password === password.trim()
+      (
+        (u.email && u.email.toLowerCase() === cleanId) || 
+        (u.name && u.name.toLowerCase() === cleanId) ||
+        (u.fullName && u.fullName.toLowerCase() === cleanId) ||
+        (u.id && u.id.toLowerCase() === cleanId)
+      ) &&
+      String(u.password || '123').trim() === String(password).trim()
     );
 
     if (user) {
       this.setActiveUser(user);
       return { success: true, user };
     }
-    return { success: false, message: 'Email atau password salah! Coba akun demo: rian@kost.id (pass: 123)' };
+    return { success: false, message: 'Email atau password salah! Coba akun demo: rian@kost.id atau aditya@kampus.id (password: 123)' };
   },
 
   /**
