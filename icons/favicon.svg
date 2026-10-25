@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="50%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+  </defs>
+  <!-- Background with smooth squircle -->
+  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
+  
+  <!-- Outer glowing rings -->
+  <circle cx="256" cy="256" r="210" stroke="#FFFFFF" stroke-opacity="0.1" stroke-width="12" />
+  
+  <!-- Shopping Cart Icon -->
+  <g transform="translate(110, 110)">
+    <!-- Cart wheels -->
+    <circle cx="90" cy="250" r="26" fill="#FFFFFF"/>
+    <circle cx="210" cy="250" r="26" fill="#FFFFFF"/>
+    <circle cx="90" cy="250" r="12" fill="#047857"/>
+    <circle cx="210" cy="250" r="12" fill="#047857"/>
+    
+    <!-- Cart body lines -->
+    <path d="M10 20 H50 L85 180 H235 L270 70 H65" 
+          stroke="#FFFFFF" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M95 125 H245" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" stroke-opacity="0.6"/>
+    
+    <!-- Shield / Safety Check in cart -->
+    <path d="M160 30 L215 50 V105 C215 140 160 165 160 165 C160 165 105 140 105 105 V50 Z" 
+          fill="#F59E0B" stroke="#FFFFFF" stroke-width="10" stroke-linejoin="round"/>
+    <!-- Checkmark inside shield -->
+    <path d="M135 95 L152 112 L185 78" 
+          stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+</svg>
