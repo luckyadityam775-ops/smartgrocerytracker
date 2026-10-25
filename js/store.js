@@ -62,6 +62,7 @@ const Store = {
   },
 
   addCartItem(item) {
+    if (!item || !item.name || !item.name.trim()) return null;
     const cart = this.getActiveCart();
     const newItem = {
       id: 'cart_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
@@ -69,8 +70,8 @@ const Store = {
       category: item.category || 'Sembako',
       unit: item.unit || 'pcs',
       qty: Math.max(1, parseInt(item.qty, 10) || 1),
-      currentPrice: parseFloat(item.currentPrice) || 0,
-      lastPrice: parseFloat(item.lastPrice) || 0,
+      currentPrice: Math.max(0, parseFloat(item.currentPrice) || 0),
+      lastPrice: Math.max(0, parseFloat(item.lastPrice) || 0),
       discountType: item.discountType || 'none',
       discountA: parseFloat(item.discountA) || 0,
       discountB: parseFloat(item.discountB) || 0,
@@ -103,6 +104,12 @@ const Store = {
     const index = cart.findIndex((i) => i.id === id);
     if (index !== -1) {
       cart[index] = { ...cart[index], ...updates };
+      this.upsertCatalogItem({
+        name: cart[index].name,
+        category: cart[index].category,
+        unit: cart[index].unit,
+        lastPrice: cart[index].lastPrice > 0 ? cart[index].lastPrice : cart[index].currentPrice
+      });
       this.saveActiveCart(cart);
       return cart[index];
     }

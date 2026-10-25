@@ -156,7 +156,7 @@ const Calculator = {
     const grandTotal = Math.max(0, totalItemsFinal - cartSavings);
     const allSavings = totalItemSavings + cartSavings;
     const remainingBudget = parsedBudget - grandTotal;
-    const budgetUsagePercent = parsedBudget > 0 ? (grandTotal / parsedBudget) * 100 : 0;
+    const budgetUsagePercent = parsedBudget > 0 ? (grandTotal / parsedBudget) * 100 : (grandTotal > 0 ? 100 : 0);
 
     // Safety Cap Status
     // < 80%: Safe (Hijau/Biru)

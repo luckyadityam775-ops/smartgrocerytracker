@@ -86,12 +86,18 @@ const Auth = {
    * Login user with email/name and password
    */
   login(identifier, password) {
+    if (!identifier || !identifier.trim()) {
+      return { success: false, message: 'Email atau nama pengguna wajib diisi!' };
+    }
+    if (!password) {
+      return { success: false, message: 'Password wajib diisi!' };
+    }
     const users = this.getAllUsers();
-    const cleanId = (identifier || '').trim().toLowerCase();
+    const cleanId = identifier.trim().toLowerCase();
     
     const user = users.find(u => 
       (u.email.toLowerCase() === cleanId || u.name.toLowerCase() === cleanId) &&
-      u.password === password
+      u.password === password.trim()
     );
 
     if (user) {
@@ -105,6 +111,15 @@ const Auth = {
    * Register a new user with dedicated isolated storage
    */
   register({ name, email, password, role = 'Anak Kost', monthlyLimit = 500000, emergencyReserve = 50000 }) {
+    if (!name || !name.trim()) {
+      return { success: false, message: 'Nama lengkap wajib diisi!' };
+    }
+    if (!email || !email.trim()) {
+      return { success: false, message: 'Email wajib diisi!' };
+    }
+    if (!password || password.trim().length < 3) {
+      return { success: false, message: 'Password minimal 3 karakter!' };
+    }
     const users = this.getAllUsers();
     const cleanEmail = email.trim().toLowerCase();
 

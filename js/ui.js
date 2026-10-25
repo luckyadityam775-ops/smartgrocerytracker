@@ -187,11 +187,14 @@ const UI = {
                   </span>
                 </div>
                 <h4 class="text-sm font-bold text-white tracking-tight leading-tight truncate">${item.name}</h4>
+              <div class="flex items-center gap-1 shrink-0">
+                <button class="btn-edit-item p-1.5 rounded-xl bg-slate-800/60 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors touch-scale" data-id="${item.id}" title="Edit Barang">
+                  <i data-lucide="edit-2" class="w-4 h-4"></i>
+                </button>
+                <button class="btn-delete-item p-1.5 rounded-xl bg-slate-800/60 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors touch-scale" data-id="${item.id}" title="Hapus Item">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
               </div>
-              
-              <button class="btn-delete-item p-1.5 rounded-xl bg-slate-800/60 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors touch-scale" data-id="${item.id}" title="Hapus Item">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-              </button>
             </div>
 
             <!-- Price & Comparison Badge Row [F-04] -->
@@ -339,6 +342,19 @@ const UI = {
         const id = e.currentTarget.getAttribute('data-id');
         this.vibrate(40);
         Store.removeCartItem(id);
+      });
+    });
+
+    // Edit Item
+    document.querySelectorAll('.btn-edit-item').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        const cart = Store.getActiveCart();
+        const item = cart.find(i => i.id === id);
+        if (item) {
+          this.vibrate(20);
+          this.openAddItemModal(item);
+        }
       });
     });
 
@@ -633,9 +649,10 @@ const UI = {
   /**
    * Open Modal: Tambah Barang Belanja [F-01], [F-03], [F-04]
    */
-  openAddItemModal() {
+  openAddItemModal(itemToEdit = null) {
     const modal = document.getElementById('modal-container');
     if (!modal) return;
+    const isEdit = !!itemToEdit;
 
     modal.classList.remove('hidden');
     modal.innerHTML = `
@@ -645,11 +662,11 @@ const UI = {
           <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
             <div class="flex items-center gap-2">
               <span class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                <i data-lucide="${isEdit ? 'edit-3' : 'plus-circle'}" class="w-5 h-5"></i>
               </span>
               <div>
-                <h3 class="text-base font-bold text-white">Catat Barang Belanja</h3>
-                <p class="text-[11px] text-slate-400">Masukkan produk ke dalam troli supermarket</p>
+                <h3 class="text-base font-bold text-white">${isEdit ? 'Edit Barang Belanja' : 'Catat Barang Belanja'}</h3>
+                <p class="text-[11px] text-slate-400">${isEdit ? 'Perbarui rincian harga, kuantitas, atau promo' : 'Masukkan produk ke dalam troli supermarket'}</p>
               </div>
             </div>
             <button id="modal-close" class="p-1.5 rounded-full text-slate-400 hover:text-white bg-slate-800 touch-scale">
@@ -789,8 +806,8 @@ const UI = {
 
             <!-- Submit Button -->
             <button type="submit" class="w-full py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/40 touch-scale">
-              <i data-lucide="shopping-bag" class="w-4 h-4"></i>
-              <span>Masukkan ke Troli</span>
+              <i data-lucide="${isEdit ? 'check' : 'shopping-bag'}" class="w-4 h-4"></i>
+              <span>${isEdit ? 'Simpan Perubahan' : 'Masukkan ke Troli'}</span>
             </button>
           </form>
         </div>
@@ -798,13 +815,13 @@ const UI = {
     `;
 
     lucide.createIcons();
-    this.bindAddItemModalEvents();
+    this.bindAddItemModalEvents(itemToEdit);
   },
 
   /**
    * Bind events inside Add Item Modal
    */
-  bindAddItemModalEvents() {
+  bindAddItemModalEvents(itemToEdit = null) {
     const modal = document.getElementById('modal-container');
     const closeBtn = document.getElementById('modal-close');
     if (closeBtn) {
@@ -906,9 +923,18 @@ const UI = {
 
       // Update discount savings preview [F-03]
       const type = discountTypeSelect.value;
-      const discA = parseFloat(document.getElementById('input-disc-a')?.value || document.getElementById('input-tier-a')?.value) || 0;
-      const discB = parseFloat(document.getElementById('input-tier-b')?.value) || 0;
-      const discNominal = parseFloat(document.getElementById('input-disc-nominal')?.value) || 0;
+      let discA = 0;
+      let discB = 0;
+      let discNominal = 0;
+
+      if (type === 'single') {
+        discA = parseFloat(document.getElementById('input-disc-a')?.value) || 0;
+      } else if (type === 'tiered') {
+        discA = parseFloat(document.getElementById('input-tier-a')?.value) || 0;
+        discB = parseFloat(document.getElementById('input-tier-b')?.value) || 0;
+      } else if (type === 'nominal') {
+        discNominal = parseFloat(document.getElementById('input-disc-nominal')?.value) || 0;
+      }
 
       const discountResult = Calculator.calculateItemDiscount(currentPrice, type, discA, discB, discNominal);
       const label = document.getElementById('label-calculated-savings');
@@ -919,10 +945,57 @@ const UI = {
 
     priceInput.addEventListener('input', updatePreviews);
     lastPriceInput.addEventListener('input', updatePreviews);
+    qtyInput.addEventListener('input', updatePreviews);
     document.getElementById('input-disc-a')?.addEventListener('input', updatePreviews);
     document.getElementById('input-tier-a')?.addEventListener('input', updatePreviews);
     document.getElementById('input-tier-b')?.addEventListener('input', updatePreviews);
     document.getElementById('input-disc-nominal')?.addEventListener('input', updatePreviews);
+
+    // Close autocomplete when clicking outside
+    document.addEventListener('click', (e) => {
+      if (autocompleteDiv && !nameInput.contains(e.target) && !autocompleteDiv.contains(e.target)) {
+        autocompleteDiv.classList.add('hidden');
+      }
+    });
+
+    // Close modal on backdrop click
+    const backdrop = modal.querySelector('.fixed.inset-0');
+    if (backdrop) {
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+          modal.classList.add('hidden');
+        }
+      });
+    }
+
+    // Prefill data if editing an existing item
+    if (itemToEdit) {
+      nameInput.value = itemToEdit.name || '';
+      categoryInput.value = itemToEdit.category || 'Sembako';
+      unitInput.value = itemToEdit.unit || 'pcs';
+      qtyInput.value = itemToEdit.qty || 1;
+      priceInput.value = itemToEdit.currentPrice || '';
+      lastPriceInput.value = itemToEdit.lastPrice || '';
+      discountTypeSelect.value = itemToEdit.discountType || 'none';
+
+      // Show relevant discount inputs
+      discountTypeSelect.dispatchEvent(new Event('change'));
+
+      if (itemToEdit.discountType === 'single') {
+        const dA = document.getElementById('input-disc-a');
+        if (dA) dA.value = itemToEdit.discountA || '';
+      } else if (itemToEdit.discountType === 'tiered') {
+        const tA = document.getElementById('input-tier-a');
+        const tB = document.getElementById('input-tier-b');
+        if (tA) tA.value = itemToEdit.discountA || '';
+        if (tB) tB.value = itemToEdit.discountB || '';
+      } else if (itemToEdit.discountType === 'nominal') {
+        const dNom = document.getElementById('input-disc-nominal');
+        if (dNom) dNom.value = itemToEdit.discountNominal || '';
+      }
+
+      updatePreviews();
+    }
 
     // Form Submit
     form.addEventListener('submit', (e) => {
@@ -934,28 +1007,37 @@ const UI = {
       let discNom = 0;
 
       if (type === 'single') {
-        discA = parseFloat(document.getElementById('input-disc-a').value) || 0;
+        discA = parseFloat(document.getElementById('input-disc-a')?.value) || 0;
       } else if (type === 'tiered') {
-        discA = parseFloat(document.getElementById('input-tier-a').value) || 0;
-        discB = parseFloat(document.getElementById('input-tier-b').value) || 0;
+        discA = parseFloat(document.getElementById('input-tier-a')?.value) || 0;
+        discB = parseFloat(document.getElementById('input-tier-b')?.value) || 0;
       } else if (type === 'nominal') {
-        discNom = parseFloat(document.getElementById('input-disc-nominal').value) || 0;
+        discNom = parseFloat(document.getElementById('input-disc-nominal')?.value) || 0;
       }
 
-      Store.addCartItem({
-        name: nameInput.value,
+      const itemPayload = {
+        name: nameInput.value.trim(),
         category: categoryInput.value,
         unit: unitInput.value,
-        qty: parseInt(qtyInput.value) || 1,
-        currentPrice: parseFloat(priceInput.value) || 0,
-        lastPrice: parseFloat(lastPriceInput.value) || 0,
+        qty: Math.max(1, parseInt(qtyInput.value, 10) || 1),
+        currentPrice: Math.max(0, parseFloat(priceInput.value) || 0),
+        lastPrice: Math.max(0, parseFloat(lastPriceInput.value) || 0),
         discountType: type,
         discountA: discA,
         discountB: discB,
         discountNominal: discNom
-      });
+      };
 
-      this.vibrate([40, 60]);
+      if (itemToEdit) {
+        Store.updateCartItem(itemToEdit.id, itemPayload);
+        this.vibrate(30);
+        this.showToast('Barang berhasil diperbarui!');
+      } else {
+        Store.addCartItem(itemPayload);
+        this.vibrate([40, 60]);
+        this.showToast('Barang dimasukkan ke troli!');
+      }
+
       modal.classList.add('hidden');
     });
   },
@@ -1017,6 +1099,13 @@ const UI = {
     document.getElementById('modal-close').addEventListener('click', () => {
       modal.classList.add('hidden');
     });
+
+    const backdropBudget = modal.querySelector('.fixed.inset-0');
+    if (backdropBudget) {
+      backdropBudget.addEventListener('click', (e) => {
+        if (e.target === backdropBudget) modal.classList.add('hidden');
+      });
+    }
 
     document.getElementById('form-edit-budget').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -1091,6 +1180,13 @@ const UI = {
       modal.classList.add('hidden');
     });
 
+    const backdropFinish = modal.querySelector('.fixed.inset-0');
+    if (backdropFinish) {
+      backdropFinish.addEventListener('click', (e) => {
+        if (e.target === backdropFinish) modal.classList.add('hidden');
+      });
+    }
+
     document.getElementById('modal-confirm-finish').addEventListener('click', () => {
       Store.archiveCurrentCart(summary);
       this.vibrate([100, 50, 100]);
@@ -1157,6 +1253,13 @@ const UI = {
     document.getElementById('modal-close').addEventListener('click', () => {
       modal.classList.add('hidden');
     });
+
+    const backdropReceipt = modal.querySelector('.fixed.inset-0');
+    if (backdropReceipt) {
+      backdropReceipt.addEventListener('click', (e) => {
+        if (e.target === backdropReceipt) modal.classList.add('hidden');
+      });
+    }
   },
 
   /**
@@ -1423,6 +1526,13 @@ const UI = {
     document.getElementById('modal-auth-close').addEventListener('click', () => {
       modal.classList.add('hidden');
     });
+
+    const backdropAuth = modal.querySelector('.fixed.inset-0');
+    if (backdropAuth) {
+      backdropAuth.addEventListener('click', (e) => {
+        if (e.target === backdropAuth) modal.classList.add('hidden');
+      });
+    }
 
     // Bind 1-tap switch buttons
     document.querySelectorAll('.btn-switch-account').forEach(btn => {

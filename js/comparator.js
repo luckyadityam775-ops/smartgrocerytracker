@@ -14,6 +14,21 @@ const Comparator = {
     const curr = Calculator.parseNumber(currentPrice);
     const prev = Calculator.parseNumber(lastPrice);
 
+    if (curr <= 0) {
+      return {
+        type: 'empty',
+        label: prev > 0 ? `Bulan Lalu: ${Calculator.formatRupiah(prev)}` : 'Ketik Harga',
+        arrow: '•',
+        icon: 'info',
+        diffAmount: 0,
+        diffPercent: 0,
+        badgeClass: 'badge-diff-equal',
+        textClass: 'text-slate-400',
+        bgClass: 'bg-slate-500/10 border-slate-500/30',
+        summary: prev > 0 ? `Patokan harga bulan lalu: ${Calculator.formatRupiah(prev)}` : 'Ketik harga untuk melihat perbandingan'
+      };
+    }
+
     if (prev <= 0) {
       return {
         type: 'new',

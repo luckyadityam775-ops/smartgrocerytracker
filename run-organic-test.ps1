@@ -1,5 +1,5 @@
 # Organic End-to-End Test Suite for Smart Grocery & Budget Safety Tracker
-param([bool]$OpenBrowser = $false)
+param([switch]$OpenBrowser)
 
 Write-Host "=================================================================" -ForegroundColor Cyan
 Write-Host "       SMART GROCERY & BUDGET SAFETY TRACKER - ORGANIC TEST      " -ForegroundColor Yellow
