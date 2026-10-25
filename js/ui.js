@@ -517,8 +517,33 @@ const UI = {
       }).join('');
     }
 
+    const currentUser = window.Auth ? window.Auth.getCurrentUser() : null;
+
     container.innerHTML = `
       <div class="px-4 py-4 pb-24 space-y-4">
+        <!-- User Profile & Account Card -->
+        <div class="glass-card rounded-2xl p-4 bg-gradient-to-r from-emerald-950/40 to-slate-900 border border-emerald-500/20">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-white">
+              <i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i>
+              <span>Akun Aktif</span>
+            </div>
+            <button id="btn-manage-account-tab" class="text-xs px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold touch-scale flex items-center gap-1">
+              <i data-lucide="repeat" class="w-3 h-3"></i>
+              <span>Ganti Akun</span>
+            </button>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl ${currentUser?.avatarBg || 'bg-emerald-600'} text-white font-extrabold flex items-center justify-center text-sm shadow-md border border-white/20">
+              ${currentUser?.avatarLetter || 'R'}
+            </div>
+            <div>
+              <h4 class="text-sm font-extrabold text-white leading-tight">${currentUser?.fullName || 'Rian (Anak Rantau)'}</h4>
+              <p class="text-xs text-slate-400">${currentUser?.email || 'rian@kost.id'}</p>
+            </div>
+          </div>
+        </div>
+
         <!-- Budget Settings Card -->
         <div class="glass-card rounded-2xl p-4">
           <div class="flex items-center justify-between mb-3">
@@ -584,6 +609,11 @@ const UI = {
     `;
 
     lucide.createIcons();
+
+    const manageAccBtn = document.getElementById('btn-manage-account-tab');
+    if (manageAccBtn) {
+      manageAccBtn.addEventListener('click', () => this.openAuthModal());
+    }
 
     const editBtn = document.getElementById('btn-edit-budget-tab');
     if (editBtn) {
@@ -1175,9 +1205,304 @@ const UI = {
   },
 
   /**
+   * Render Top Bar Profile Badge
+   */
+  renderAppHeader() {
+    const user = window.Auth ? window.Auth.getCurrentUser() : null;
+    const profileContainer = document.getElementById('header-profile-btn');
+    if (!profileContainer) return;
+
+    if (!user) {
+      profileContainer.innerHTML = `
+        <button class="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1">
+          <i data-lucide="user" class="w-3.5 h-3.5"></i>
+          <span>Masuk</span>
+        </button>
+      `;
+      profileContainer.onclick = () => this.openAuthModal();
+      return;
+    }
+
+    profileContainer.innerHTML = `
+      <div class="flex items-center gap-2 cursor-pointer touch-scale">
+        <div class="text-right hidden sm:block">
+          <span class="text-xs font-bold text-white block leading-none truncate max-w-[100px]">${user.name}</span>
+          <span class="text-[9px] text-emerald-400 font-semibold">${user.role || 'Pengguna'}</span>
+        </div>
+        <div class="w-7 h-7 rounded-full ${user.avatarBg || 'bg-emerald-600'} text-white font-extrabold flex items-center justify-center text-xs shadow-md border border-white/20">
+          ${user.avatarLetter || user.name.charAt(0).toUpperCase()}
+        </div>
+      </div>
+    `;
+    profileContainer.onclick = () => this.openAuthModal();
+    if (window.lucide) lucide.createIcons();
+  },
+
+  /**
+   * Floating Toast Message
+   */
+  showToast(message, type = 'success') {
+    let toast = document.getElementById('app-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'app-toast';
+      toast.className = 'fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl text-xs font-bold shadow-2xl flex items-center gap-2 transition-all duration-300 pointer-events-none transform -translate-y-4 opacity-0 max-w-[380px] text-center';
+      document.body.appendChild(toast);
+    }
+
+    const bgClass = type === 'success' ? 'bg-emerald-600 text-white border border-emerald-400/40 shadow-emerald-950/60' : 'bg-rose-600 text-white border border-rose-400/40 shadow-rose-950/60';
+    toast.className = `fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl text-xs font-bold shadow-2xl flex items-center gap-2 transition-all duration-300 pointer-events-none transform translate-y-0 opacity-100 max-w-[380px] ${bgClass}`;
+    toast.innerText = message;
+
+    clearTimeout(this.toastTimeout);
+    this.toastTimeout = setTimeout(() => {
+      toast.className = toast.className.replace('translate-y-0 opacity-100', '-translate-y-4 opacity-0');
+    }, 2500);
+  },
+
+  /**
+   * Account Management & Switcher Modal Drawer
+   */
+  openAuthModal() {
+    const modal = document.getElementById('modal-container');
+    if (!modal) return;
+
+    const currentUser = window.Auth ? window.Auth.getCurrentUser() : null;
+    const allUsers = window.Auth ? window.Auth.getAllUsers() : [];
+
+    const otherUsers = allUsers.filter(u => !currentUser || u.id !== currentUser.id);
+
+    const otherUsersHtml = otherUsers.length > 0 ? otherUsers.map(u => {
+      const uBudget = JSON.parse(localStorage.getItem(`smartgrocery_${u.id}_budget`) || '{"monthlyLimit":500000}');
+      return `
+        <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60 hover:border-emerald-500/40 transition mb-2">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-full ${u.avatarBg || 'bg-slate-700'} text-white font-bold flex items-center justify-center text-xs">
+              ${u.avatarLetter || u.name.charAt(0)}
+            </div>
+            <div>
+              <span class="text-xs font-bold text-white block leading-tight">${u.fullName || u.name}</span>
+              <span class="text-[10px] text-slate-400">${u.email} • Saldo: ${Calculator.formatRupiah(uBudget.monthlyLimit)}</span>
+            </div>
+          </div>
+          <button class="btn-switch-account px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white font-bold text-xs touch-scale transition" data-id="${u.id}">
+            Beralih
+          </button>
+        </div>
+      `;
+    }).join('') : '<p class="text-xs text-slate-400 py-2 text-center">Belum ada akun lain yang tersimpan.</p>';
+
+    modal.classList.remove('hidden');
+    modal.innerHTML = `
+      <div class="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
+        <div class="w-full max-w-[430px] bg-slate-900 border border-slate-700/80 rounded-t-3xl sm:rounded-3xl p-5 animate-slide-up max-h-[92vh] overflow-y-auto">
+          <!-- Modal Header -->
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                <i data-lucide="users" class="w-5 h-5"></i>
+              </span>
+              <div>
+                <h3 class="text-base font-bold text-white">Kelola & Ganti Akun</h3>
+                <p class="text-[11px] text-slate-400">Setiap akun memiliki data keranjang, riwayat, dan saldo terpisah</p>
+              </div>
+            </div>
+            <button id="modal-auth-close" class="p-1.5 rounded-full text-slate-400 hover:text-white bg-slate-800 touch-scale">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Active Account Card -->
+          ${currentUser ? `
+            <div class="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/70 to-slate-900 border border-emerald-500/30 mb-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>Akun Sedang Aktif</span>
+                </span>
+                <span class="text-[10px] text-slate-400">${currentUser.email}</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl ${currentUser.avatarBg || 'bg-emerald-600'} text-white font-extrabold flex items-center justify-center text-base shadow-lg border border-white/20">
+                  ${currentUser.avatarLetter || currentUser.name.charAt(0)}
+                </div>
+                <div>
+                  <h4 class="text-sm font-extrabold text-white leading-tight">${currentUser.fullName || currentUser.name}</h4>
+                  <p class="text-xs text-emerald-400 font-medium">${currentUser.role || 'Pengguna'}</p>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Quick Switch Section -->
+          <div class="mb-5">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5 flex items-center gap-1.5">
+              <i data-lucide="repeat" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Beralih ke Akun Lain</span>
+            </h4>
+            <div class="space-y-1">
+              ${otherUsersHtml}
+            </div>
+          </div>
+
+          <!-- Tabs: Daftar Akun Baru & Masuk Akun Lain -->
+          <div class="border-t border-slate-800 pt-4">
+            <div class="flex rounded-xl bg-slate-950 p-1 mb-4 border border-slate-800">
+              <button id="btn-tab-register" class="flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white transition">
+                + Daftar Akun Baru
+              </button>
+              <button id="btn-tab-login" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition">
+                Masuk Akun Lain
+              </button>
+            </div>
+
+            <!-- Form: Register New User -->
+            <form id="form-register-user" class="space-y-3">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Nama Lengkap *</label>
+                <input type="text" id="reg-name" required placeholder="Contoh: Siti Rahma" 
+                  class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-300 mb-1">Peran / Status</label>
+                  <input type="text" id="reg-role" placeholder="Contoh: Mahasiswi" 
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-300 mb-1">Batas Anggaran (Rp)</label>
+                  <input type="number" id="reg-budget" value="600000" step="10000" 
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Email *</label>
+                <input type="email" id="reg-email" required placeholder="Contoh: siti@kost.id" 
+                  class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Password *</label>
+                <input type="password" id="reg-password" required placeholder="Minimal 3 karakter" 
+                  class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+              </div>
+
+              <button type="submit" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-900/40 touch-scale">
+                Daftar & Langsung Masuk
+              </button>
+            </form>
+
+            <!-- Form: Login User -->
+            <form id="form-login-user" class="space-y-3 hidden">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Email atau Nama Pengguna *</label>
+                <input type="text" id="login-identifier" required placeholder="rian@kost.id atau aditya@kampus.id" 
+                  class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Password *</label>
+                <input type="password" id="login-password" required placeholder="Password Anda (Demo: 123)" 
+                  class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+              </div>
+
+              <button type="submit" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-900/40 touch-scale">
+                Masuk ke Akun
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    `;
+
+    lucide.createIcons();
+
+    // Bind Close
+    document.getElementById('modal-auth-close').addEventListener('click', () => {
+      modal.classList.add('hidden');
+    });
+
+    // Bind 1-tap switch buttons
+    document.querySelectorAll('.btn-switch-account').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetId = e.currentTarget.getAttribute('data-id');
+        const success = window.Auth.switchAccount(targetId);
+        if (success) {
+          const user = window.Auth.getCurrentUser();
+          this.vibrate(40);
+          this.showToast(`Beralih ke akun ${user.name}! Data belanja diperbarui.`);
+          modal.classList.add('hidden');
+          this.render();
+        }
+      });
+    });
+
+    // Toggle Tab Register / Login
+    const tabRegBtn = document.getElementById('btn-tab-register');
+    const tabLogBtn = document.getElementById('btn-tab-login');
+    const formReg = document.getElementById('form-register-user');
+    const formLog = document.getElementById('form-login-user');
+
+    tabRegBtn.addEventListener('click', () => {
+      tabRegBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white transition';
+      tabLogBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition';
+      formReg.classList.remove('hidden');
+      formLog.classList.add('hidden');
+    });
+
+    tabLogBtn.addEventListener('click', () => {
+      tabLogBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white transition';
+      tabRegBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition';
+      formLog.classList.remove('hidden');
+      formReg.classList.add('hidden');
+    });
+
+    // Handle Registration
+    formReg.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('reg-name').value;
+      const role = document.getElementById('reg-role').value || 'Anak Kost';
+      const budgetLimit = document.getElementById('reg-budget').value || 500000;
+      const email = document.getElementById('reg-email').value;
+      const password = document.getElementById('reg-password').value;
+
+      const res = window.Auth.register({ name, role, email, password, monthlyLimit: budgetLimit });
+      if (res.success) {
+        this.vibrate([50, 100]);
+        this.showToast(`Akun ${res.user.name} berhasil dibuat & aktif!`);
+        modal.classList.add('hidden');
+        this.render();
+      } else {
+        alert(res.message);
+      }
+    });
+
+    // Handle Login
+    formLog.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = document.getElementById('login-identifier').value;
+      const pass = document.getElementById('login-password').value;
+
+      const res = window.Auth.login(id, pass);
+      if (res.success) {
+        this.vibrate(40);
+        this.showToast(`Selamat datang kembali, ${res.user.name}!`);
+        modal.classList.add('hidden');
+        this.render();
+      } else {
+        alert(res.message);
+      }
+    });
+  },
+
+  /**
    * Full App Render Loop
    */
   render() {
+    this.renderAppHeader();
+
     const budget = Store.getBudgetSettings();
     const cart = Store.getActiveCart();
     const discount = Store.getCartDiscount();

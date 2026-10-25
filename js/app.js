@@ -3,16 +3,22 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. Initialize data store
+  // 1. Initialize auth & data store
+  if (window.Auth) window.Auth.init();
   Store.init();
 
   // 2. Initial UI render
   UI.render();
 
-  // 3. React to Store updates automatically
+  // 3. React to Store & Auth updates automatically
   Store.onChange(() => {
     UI.render();
   });
+  if (window.Auth) {
+    window.Auth.onAuthChange(() => {
+      UI.render();
+    });
+  }
 
   // 4. Bind Bottom Navigation Bar
   document.querySelectorAll('.nav-tab-btn').forEach(btn => {

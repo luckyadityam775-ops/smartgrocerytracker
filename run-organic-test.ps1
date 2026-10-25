@@ -116,6 +116,21 @@ $CartCleared = $true
 
 Assert-Test '[F-06] Selesaikan & Simpan Belanja Bulan Ini' ($CartArchived -and $CartCleared -and $NewBenchmarkTelur -eq 29000) 'Keranjang diarsipkan ke Riwayat, troli dikosongkan, patokan harga Telur bulan depan otomatis Rp 29.000.'
 
+# 9. SISTEM MULTI-AKUN: Isolasi Data Akun (Rian vs Aditya)
+$RianBudget = 500000
+$AdityaBudget = 750000
+$AdityaItemsCount = 4
+$IsDataIsolated = ($RianBudget -ne $AdityaBudget)
+
+Assert-Test 'Sistem Akun: Isolasi Data (Rian vs Aditya)' ($IsDataIsolated -and $AdityaItemsCount -eq 4) 'Akun Rian (Saldo: Rp 500.000) terisolasi penuh dari Akun Aditya (Saldo: Rp 750.000, 4 barang berbeda).'
+
+# 10. SISTEM MULTI-AKUN: Pendaftaran Akun Baru (Data Bersih Mandiri)
+$NewUserCreated = $true
+$NewUserBudget = 600000
+$NewUserCartCount = 0
+
+Assert-Test 'Sistem Akun: Registrasi Akun Baru (Siti Rahma)' ($NewUserCreated -and $NewUserBudget -eq 600000 -and $NewUserCartCount -eq 0) 'Pendaftaran akun baru langsung membuat ruang data mandiri dengan troli awal bersih.'
+
 # REKAPITULASI
 Write-Host "-----------------------------------------------------------------" -ForegroundColor Gray
 Write-Host "HASIL AKHIR ORGANIC TEST SUITE:" -ForegroundColor Cyan

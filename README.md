@@ -54,6 +54,16 @@ Aplikasi web mobile (Progressive Web App) bergaya *native app* yang dirancang kh
   - Tombol **"Selesaikan & Simpan Belanja Bulan Ini"**: Mengarsipkan keranjang ke riwayat, memperbarui harga acuan bulan depan di katalog, dan mengosongkan troli aktif.
   - Grafik tren pengeluaran bulanan berbasis SVG ringan dan interaktif.
 
+- [x] **[Fitur Baru] Sistem Multi-Akun & Isolasi Data Penuh**:
+  - Setiap akun pengguna memiliki ruang data mandiri yang terpisah 100%:
+    * Saldo dompet & cadangan darurat terpisah.
+    * Keranjang belanja aktif & kuantitas barang terpisah.
+    * Katalog patokan riwayat harga barang terpisah.
+    * Riwayat sesi belanja bulanan terpisah.
+  - Fitur *1-Tap Account Switcher* untuk beralih instan antar akun (misal: Rian vs Aditya).
+  - Formulir registrasi akun baru langsung membuat ruang data bersih dan mandiri.
+
+
 ---
 
 ## 🚀 Cara Menjalankan

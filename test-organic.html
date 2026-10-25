@@ -53,6 +53,7 @@
 
   <!-- Dependencies -->
   <script src="./js/seedData.js"></script>
+  <script src="./js/auth.js"></script>
   <script src="./js/calculator.js"></script>
   <script src="./js/comparator.js"></script>
   <script src="./js/store.js"></script>
@@ -272,6 +273,54 @@
         isArchived && isCartCleared && isCatalogUpdated,
         `Troli berhasil diarsipkan ke Riwayat (${archivedSession.itemCount} barang, ${Calculator.formatRupiah(archivedSession.totalAmount)}). Keranjang dikosongkan, dan harga acuan Telur diperbarui otomatis menjadi Rp 29.000 untuk bulan depan.`
       );
+
+      // ==========================================
+      // SKENARIO 8: Multi-Account Isolation (Rian vs Aditya)
+      // ==========================================
+      // Beralih ke Akun Aditya
+      Auth.switchAccount("user_aditya");
+      const adityaUser = Auth.getCurrentUser();
+      const adityaBudget = Store.getBudgetSettings();
+      const adityaCart = Store.getActiveCart();
+
+      const isAdityaIsolated = adityaUser.id === 'user_aditya' &&
+                               adityaBudget.monthlyLimit === 750000 &&
+                               adityaCart.length === 4 &&
+                               adityaCart.some(i => i.name.includes("Susu UHT"));
+
+      recordTest(
+        "Isolasi Data Akun (Beralih ke Aditya)",
+        "Sistem Akun",
+        isAdityaIsolated,
+        `Berhasil beralih ke akun ${adityaUser.fullName}. Saldo ${Calculator.formatRupiah(adityaBudget.monthlyLimit)} dan troli berisi 4 item berbeda (Susu UHT, Roti, Kopi, Nugget). Data Rian tidak tercampur.`
+      );
+
+      // ==========================================
+      // SKENARIO 9: Pendaftaran Akun Baru (Data Mandiri)
+      // ==========================================
+      const regRes = Auth.register({
+        name: "Siti Rahma",
+        role: "Mahasiswi Kedokteran",
+        email: "siti@kost.id",
+        password: "123",
+        monthlyLimit: 600000
+      });
+
+      const sitiBudget = Store.getBudgetSettings();
+      const sitiCart = Store.getActiveCart();
+      const isSitiIsolated = regRes.success &&
+                             sitiBudget.monthlyLimit === 600000 &&
+                             sitiCart.length === 0;
+
+      recordTest(
+        "Pendaftaran Akun Baru & Ruang Data Bersih",
+        "Sistem Akun",
+        isSitiIsolated,
+        `Akun Siti Rahma berhasil dibuat. Memiliki saldo mandiri ${Calculator.formatRupiah(sitiBudget.monthlyLimit)} dengan troli awal bersih (0 barang).`
+      );
+
+      // Switch back to Rian
+      Auth.switchAccount("user_rian");
 
       // Final Summary Display
       if (failedCount === 0) {

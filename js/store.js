@@ -1,61 +1,55 @@
 /**
  * Storage Layer for Smart Grocery Tracker [F-06]
- * Structured cleanly to map 1:1 with future Firebase Firestore collections:
- * - 'budgetSettings' doc
- * - 'activeCart' collection
- * - 'catalog' collection (price history index)
- * - 'shoppingSessions' collection (archived history)
+ * Fully scoped per user account, ensuring complete data isolation.
+ * Schema maps 1:1 with future Firebase Firestore collections:
+ * - 'users/{userId}/budgetSettings'
+ * - 'users/{userId}/activeCart'
+ * - 'users/{userId}/catalog'
+ * - 'users/{userId}/shoppingSessions'
  */
 
 const Store = {
-  KEYS: {
-    BUDGET: 'smartgrocery_budget_v1',
-    CART: 'smartgrocery_cart_v1',
-    CATALOG: 'smartgrocery_catalog_v1',
-    HISTORY: 'smartgrocery_history_v1',
-    CART_DISCOUNT: 'smartgrocery_cart_discount_v1'
+  /**
+   * Dynamically build user-scoped storage key
+   * @param {string} category 'budget' | 'cart' | 'catalog' | 'history' | 'cart_discount'
+   */
+  getKey(category) {
+    const user = window.Auth ? window.Auth.getCurrentUser() : null;
+    const uid = user ? user.id : 'user_rian';
+    return `smartgrocery_${uid}_${category}`;
   },
 
   /**
-   * Initialize local database with seed data if not present
+   * Initialize local database
    */
   init() {
-    if (!localStorage.getItem(this.KEYS.BUDGET)) {
-      this.saveBudgetSettings(window.SEED_DATA.budgetSettings);
-    }
-    if (!localStorage.getItem(this.KEYS.CATALOG)) {
-      this.saveCatalog(window.SEED_DATA.catalog);
-    }
-    if (!localStorage.getItem(this.KEYS.CART)) {
-      this.saveActiveCart(window.SEED_DATA.activeCart);
-    }
-    if (!localStorage.getItem(this.KEYS.HISTORY)) {
-      this.saveHistory(window.SEED_DATA.history);
-    }
-    if (!localStorage.getItem(this.KEYS.CART_DISCOUNT)) {
-      this.saveCartDiscount({ type: 'none', value: 0 });
+    // Auth handles seeding users and user data
+    if (window.Auth) {
+      window.Auth.init();
     }
   },
 
   // ------------------ BUDGET ------------------
   getBudgetSettings() {
     try {
-      const data = localStorage.getItem(this.KEYS.BUDGET);
-      return data ? JSON.parse(data) : { monthlyLimit: 500000, emergencyReserve: 50000, userName: "Rian (Anak Rantau)" };
+      const data = localStorage.getItem(this.getKey('budget'));
+      if (data) return JSON.parse(data);
+      const user = window.Auth ? window.Auth.getCurrentUser() : null;
+      return { monthlyLimit: 500000, emergencyReserve: 50000, userName: user ? user.fullName : "Rian (Anak Rantau)" };
     } catch (e) {
       return { monthlyLimit: 500000, emergencyReserve: 50000, userName: "Rian (Anak Rantau)" };
     }
   },
 
   saveBudgetSettings(settings) {
-    localStorage.setItem(this.KEYS.BUDGET, JSON.stringify(settings));
+    localStorage.setItem(this.getKey('budget'), JSON.stringify(settings));
     this.notifyChange('budget');
   },
 
   // ------------------ ACTIVE CART ------------------
   getActiveCart() {
     try {
-      const data = localStorage.getItem(this.KEYS.CART);
+      const data = localStorage.getItem(this.getKey('cart'));
       return data ? JSON.parse(data) : [];
     } catch (e) {
       return [];
@@ -63,7 +57,7 @@ const Store = {
   },
 
   saveActiveCart(cart) {
-    localStorage.setItem(this.KEYS.CART, JSON.stringify(cart));
+    localStorage.setItem(this.getKey('cart'), JSON.stringify(cart));
     this.notifyChange('cart');
   },
 
@@ -140,7 +134,7 @@ const Store = {
   // ------------------ CART DISCOUNT ------------------
   getCartDiscount() {
     try {
-      const data = localStorage.getItem(this.KEYS.CART_DISCOUNT);
+      const data = localStorage.getItem(this.getKey('cart_discount'));
       return data ? JSON.parse(data) : { type: 'none', value: 0 };
     } catch (e) {
       return { type: 'none', value: 0 };
@@ -148,14 +142,14 @@ const Store = {
   },
 
   saveCartDiscount(discount) {
-    localStorage.setItem(this.KEYS.CART_DISCOUNT, JSON.stringify(discount));
+    localStorage.setItem(this.getKey('cart_discount'), JSON.stringify(discount));
     this.notifyChange('cart');
   },
 
   // ------------------ CATALOG ------------------
   getCatalog() {
     try {
-      const data = localStorage.getItem(this.KEYS.CATALOG);
+      const data = localStorage.getItem(this.getKey('catalog'));
       return data ? JSON.parse(data) : [];
     } catch (e) {
       return [];
@@ -163,7 +157,7 @@ const Store = {
   },
 
   saveCatalog(catalog) {
-    localStorage.setItem(this.KEYS.CATALOG, JSON.stringify(catalog));
+    localStorage.setItem(this.getKey('catalog'), JSON.stringify(catalog));
   },
 
   findCatalogItemByName(name) {
@@ -209,7 +203,7 @@ const Store = {
   // ------------------ HISTORY & ARCHIVING [F-06] ------------------
   getHistory() {
     try {
-      const data = localStorage.getItem(this.KEYS.HISTORY);
+      const data = localStorage.getItem(this.getKey('history'));
       return data ? JSON.parse(data) : [];
     } catch (e) {
       return [];
@@ -217,16 +211,10 @@ const Store = {
   },
 
   saveHistory(history) {
-    localStorage.setItem(this.KEYS.HISTORY, JSON.stringify(history));
+    localStorage.setItem(this.getKey('history'), JSON.stringify(history));
     this.notifyChange('history');
   },
 
-  /**
-   * Selesaikan & Simpan Belanja Bulan Ini:
-   * 1. Creates an archived shopping session record in history
-   * 2. Updates 'Harga Terakhir' for all items in catalog so future comparison works automatically
-   * 3. Clears active cart
-   */
   archiveCurrentCart(cartSummary, notes = '') {
     const cart = this.getActiveCart();
     if (!cart || cart.length === 0) return null;
@@ -239,7 +227,6 @@ const Store = {
     const sessionMonthName = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
     const dateFormatted = now.toISOString().split('T')[0];
 
-    // 1. Create history archive
     const sessionRecord = {
       id: 'session_' + Date.now(),
       date: dateFormatted,
@@ -270,26 +257,23 @@ const Store = {
     history.unshift(sessionRecord);
     this.saveHistory(history);
 
-    // 2. Update catalog: current prices become next session's lastPrice!
+    // Update catalog with latest prices as benchmark
     cart.forEach(item => {
       this.upsertCatalogItem({
         name: item.name,
         category: item.category,
         unit: item.unit,
-        lastPrice: item.currentPrice // base unit price recorded as new benchmark
+        lastPrice: item.currentPrice
       });
     });
 
-    // 3. Reset active cart & cart discount
+    // Reset active cart
     this.saveActiveCart([]);
     this.saveCartDiscount({ type: 'none', value: 0 });
 
     return sessionRecord;
   },
 
-  /**
-   * Calculate spending per category in active cart
-   */
   getCategoryBreakdown(items) {
     const breakdown = {};
     (items || []).forEach(item => {
@@ -314,12 +298,10 @@ const Store = {
   },
 
   resetDemo() {
-    localStorage.removeItem(this.KEYS.BUDGET);
-    localStorage.removeItem(this.KEYS.CART);
-    localStorage.removeItem(this.KEYS.CATALOG);
-    localStorage.removeItem(this.KEYS.HISTORY);
-    localStorage.removeItem(this.KEYS.CART_DISCOUNT);
-    this.init();
+    localStorage.clear();
+    if (window.Auth) {
+      window.Auth.init();
+    }
     this.notifyChange('all');
   }
 };
