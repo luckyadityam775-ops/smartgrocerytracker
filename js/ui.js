@@ -1710,6 +1710,19 @@ const UI = {
               Hubungkan ke Firebase untuk sinkronisasi antar HP dan Laptop di mana saja secara nirkabel dengan listener <code class="text-sky-300 bg-slate-900 px-1 rounded">db.collection().onSnapshot()</code>.
             </p>
 
+            <!-- Quick Paste Helper Box -->
+            <div class="mt-3 p-3 rounded-xl bg-slate-900/90 border border-sky-500/30">
+              <label class="text-[10px] font-bold text-sky-400 block mb-1 flex items-center justify-between">
+                <span class="flex items-center gap-1.5"><i data-lucide="clipboard-paste" class="w-3.5 h-3.5 text-sky-400"></i> Tempel Cepat Script firebaseConfig</span>
+                <span class="text-[9px] text-slate-400 font-normal">Auto-parse</span>
+              </label>
+              <textarea id="fb-raw-config" rows="2" placeholder='Salin blok "const firebaseConfig = { ... }" dari Google Chrome lalu tempel di sini...' class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-[10px] font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500"></textarea>
+              <button type="button" id="btn-parse-fb-config" class="mt-1.5 w-full py-1.5 rounded-lg bg-sky-600/25 hover:bg-sky-600/40 text-sky-300 border border-sky-500/30 text-[10px] font-bold transition flex items-center justify-center gap-1.5">
+                <i data-lucide="sparkles" class="w-3 h-3 text-sky-400"></i>
+                <span>Ekstrak Otomatis ke Form</span>
+              </button>
+            </div>
+
             <!-- Firebase Config Form -->
             <form id="form-firebase-config" class="mt-3 space-y-2">
               <div>
@@ -1787,6 +1800,42 @@ const UI = {
       this.vibrate([30, 40]);
       Store.notifyChange('cart');
       this.showToast('📡 Sinyal Realtime terkirim ke seluruh tab & perangkat!');
+    });
+
+    // Auto-parse raw config from Firebase console snippet
+    const btnParse = document.getElementById('btn-parse-fb-config');
+    const rawConfigArea = document.getElementById('fb-raw-config');
+    const parseSnippet = () => {
+      const text = rawConfigArea?.value || '';
+      if (!text.trim()) return;
+
+      const extract = (key) => {
+        const regex = new RegExp(`['"]?${key}['"]?\\s*:\\s*['"]([^'"]+)['"]`, 'i');
+        const match = text.match(regex);
+        return match ? match[1] : '';
+      };
+
+      const apiKey = extract('apiKey');
+      const projectId = extract('projectId');
+      const authDomain = extract('authDomain');
+      const appId = extract('appId');
+      const storageBucket = extract('storageBucket');
+
+      if (apiKey) document.getElementById('fb-apiKey').value = apiKey;
+      if (projectId) document.getElementById('fb-projectId').value = projectId;
+      if (authDomain) document.getElementById('fb-authDomain').value = authDomain;
+      if (appId) document.getElementById('fb-appId').value = appId;
+      if (storageBucket) document.getElementById('fb-storageBucket').value = storageBucket;
+
+      this.vibrate(20);
+      this.showToast('✨ Konfigurasi Firebase berhasil diekstrak!');
+    };
+
+    btnParse?.addEventListener('click', parseSnippet);
+    rawConfigArea?.addEventListener('input', () => {
+      if (rawConfigArea.value.includes('apiKey')) {
+        parseSnippet();
+      }
     });
 
     // Form Firebase Save

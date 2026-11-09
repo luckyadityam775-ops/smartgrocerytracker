@@ -160,9 +160,20 @@
      * Get saved Firebase configuration from local storage
      */
     getFirebaseConfig() {
+      if (window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey) {
+        return window.FIREBASE_CONFIG;
+      }
       try {
         const raw = localStorage.getItem(FIREBASE_CONFIG_KEY);
-        return raw ? JSON.parse(raw) : null;
+        if (raw) return JSON.parse(raw);
+        // Pre-filled defaults detected from user's Firebase project
+        return {
+          projectId: 'smartgrocerytracker-4980e',
+          authDomain: 'smartgrocerytracker-4980e.firebaseapp.com',
+          storageBucket: 'smartgrocerytracker-4980e.firebasestorage.app',
+          apiKey: '',
+          appId: ''
+        };
       } catch (e) {
         return null;
       }
@@ -206,6 +217,9 @@
         }
 
         firestoreDb = firebase.firestore(app);
+        try {
+          firestoreDb.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+        } catch (e) {}
         isFirestoreActive = true;
         this.attachFirestoreSnapshots();
         console.log('[Realtime] Connected to Cloud Firestore successfully!');
