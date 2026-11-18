@@ -2,13 +2,13 @@
  * Supabase Client Configuration & Google OAuth Module
  * Smart Grocery & Budget Safety Tracker
  * 
- * Project URL: https://pynraezkvnqtidmljdkk.supabase.co
- * Callback URL: https://pynraezkvnqtidmljdkk.supabase.co/auth/v1/callback
+ * Project URL: https://neehtpmqsgdnxijxuswq.supabase.co
+ * Callback URL: https://neehtpmqsgdnxijxuswq.supabase.co/auth/v1/callback
  */
 
-const SUPABASE_PROJECT_URL = 'https://pynraezkvnqtidmljdkk.supabase.co';
-const SUPABASE_CALLBACK_URL = 'https://pynraezkvnqtidmljdkk.supabase.co/auth/v1/callback';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5bnJhZXprdm5xdGlkbWxqZGtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5MTg2NDcsImV4cCI6MjExMDQ5NDY0N30.OVtpBCGy0l__1IAahicfRkSsyeCwUNjx8wQDb7JIVqY';
+const SUPABASE_PROJECT_URL = 'https://neehtpmqsgdnxijxuswq.supabase.co';
+const SUPABASE_CALLBACK_URL = 'https://neehtpmqsgdnxijxuswq.supabase.co/auth/v1/callback';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5lZWh0cG1xc2dkbnhpanh1c3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUwMDA2NTMsImV4cCI6MjExMDU3NjY1M30.XWD2aPhNVnlsm2Efs2znCswbhLG-UccsI9tH0iKv4Iw';
 
 // Always make sure anon key is cached in localStorage
 if (typeof localStorage !== 'undefined') {

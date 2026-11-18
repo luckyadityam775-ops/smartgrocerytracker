@@ -3709,9 +3709,9 @@ const UI = {
           <div class="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1.5">
             <div class="flex justify-between items-center text-[10px]">
               <span class="text-slate-400">Project URL:</span>
-              <span class="text-emerald-400 font-mono font-bold">pynraezkvnqtidmljdkk</span>
+              <span class="text-emerald-400 font-mono font-bold">neehtpmqsgdnxijxuswq</span>
             </div>
-            <p class="text-[10px] text-slate-300 truncate font-mono">https://pynraezkvnqtidmljdkk.supabase.co</p>
+            <p class="text-[10px] text-slate-300 truncate font-mono">https://neehtpmqsgdnxijxuswq.supabase.co</p>
             
             <div class="flex justify-between items-center text-[10px] pt-1.5 border-t border-slate-800">
               <span class="text-slate-400">OAuth Callback URL:</span>
@@ -3719,7 +3719,7 @@ const UI = {
                 <i data-lucide="copy" class="w-3 h-3"></i> Salin
               </button>
             </div>
-            <p class="text-[9px] text-slate-400 truncate font-mono">https://pynraezkvnqtidmljdkk.supabase.co/auth/v1/callback</p>
+            <p class="text-[9px] text-slate-400 truncate font-mono">https://neehtpmqsgdnxijxuswq.supabase.co/auth/v1/callback</p>
           </div>
 
           <!-- Anon Key Input -->
@@ -3776,7 +3776,7 @@ const UI = {
     });
 
     document.getElementById('btn-copy-callback-url')?.addEventListener('click', () => {
-      navigator.clipboard.writeText('https://pynraezkvnqtidmljdkk.supabase.co/auth/v1/callback');
+      navigator.clipboard.writeText('https://neehtpmqsgdnxijxuswq.supabase.co/auth/v1/callback');
       this.showToast('Callback URL disalin ke clipboard!');
     });
 

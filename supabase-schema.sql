@@ -1,6 +1,6 @@
 -- ====================================================================
 -- SKEMA DATABASE SMART GROCERY TRACKER (SUPABASE POSTGRESQL)
--- Proyek Supabase: https://pynraezkvnqtidmljdkk.supabase.co
+-- Proyek Supabase: https://neehtpmqsgdnxijxuswq.supabase.co
 -- Cara Pakai: Salin seluruh isi script ini -> Buka Supabase Dashboard
 --              -> Klik menu "SQL Editor" -> Klik "+ New Query"
 --              -> Tempel di editor -> Klik "Run" (atau Ctrl+Enter)

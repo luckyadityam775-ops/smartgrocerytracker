@@ -75,8 +75,8 @@ Aplikasi web mobile (Progressive Web App) bergaya _native app_ yang dirancang un
 ## 🔐 Integrasi Google OAuth via Supabase
 
 ### 1. Data Konfigurasi Supabase Anda
-- **Project URL**: `https://pynraezkvnqtidmljdkk.supabase.co`
-- **OAuth Callback URL**: `https://pynraezkvnqtidmljdkk.supabase.co/auth/v1/callback`
+- **Project URL**: `https://neehtpmqsgdnxijxuswq.supabase.co`
+- **OAuth Callback URL**: `https://neehtpmqsgdnxijxuswq.supabase.co/auth/v1/callback`
 
 ### 2. Panduan Langkah Demi Langkah Mendapatkan Google Client ID & Client Secret
 Untuk mengaktifkan tombol **Lanjutkan dengan Google**, ikuti langkah berikut:
@@ -98,11 +98,11 @@ Untuk mengaktifkan tombol **Lanjutkan dengan Google**, ikuti langkah berikut:
    - Application type: Pilih **Web application**.
    - Name: `Supabase Google Web Client`.
    - **Authorized JavaScript origins**:
-     - Tambahkan: `https://pynraezkvnqtidmljdkk.supabase.co`
+     - Tambahkan: `https://neehtpmqsgdnxijxuswq.supabase.co`
      - (Opsional lokal): `http://localhost:8080` dan `http://127.0.0.1:8080`
    - **Authorized redirect URIs (Sangat Penting)**:
      - Klik **+ ADD URI** &rarr; tempelkan Callback URL dari Supabase:
-       `https://pynraezkvnqtidmljdkk.supabase.co/auth/v1/callback`
+       `https://neehtpmqsgdnxijxuswq.supabase.co/auth/v1/callback`
    - Klik tombol **CREATE**.
 5. **Salin Kredensial ke Supabase Dashboard**:
    - Salin **Client ID** dan **Client Secret** yang muncul di popup.
