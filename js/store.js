@@ -26,12 +26,6 @@ const Store = {
     // Auth handles seeding users and user data
     if (window.Auth) {
       window.Auth.init();
-      if (!window.Auth.getCurrentUser()) {
-        const users = window.Auth.getAllUsers();
-        if (users && users.length > 0) {
-          window.Auth.setActiveUser(users[0]);
-        }
-      }
     }
     // Ensure catalog has benchmark DT2 items
     this.ensureBenchmarkCatalog();

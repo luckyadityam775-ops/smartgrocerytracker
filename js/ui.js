@@ -2842,7 +2842,7 @@ const UI = {
                   <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <i data-lucide="mail" class="w-4 h-4"></i>
                   </div>
-                  <input type="text" id="gatekeeper-login-id" required placeholder="Contoh: user@grocerysafe.id atau email Anda" 
+                  <input type="text" id="gatekeeper-login-id" required placeholder="Contoh: rian@kost.id atau user@grocerysafe.id" 
                     class="w-full bg-slate-800/90 border border-slate-700 rounded-2xl pl-10 pr-3.5 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition">
                 </div>
               </div>
@@ -2850,7 +2850,7 @@ const UI = {
               <div>
                 <div class="flex items-center justify-between mb-1.5">
                   <label class="block text-[11px] font-semibold text-slate-300">Password *</label>
-                  <span class="text-[10px] text-slate-400">Demo password: <span class="text-emerald-400 font-mono font-bold">123</span></span>
+                  <span class="text-[10px] text-slate-400">Demo: <span class="text-emerald-400 font-mono font-bold">rian@kost.id</span> | Pass: <span class="text-emerald-400 font-mono font-bold">123</span></span>
                 </div>
                 <div class="relative">
                   <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -3354,13 +3354,51 @@ CREATE POLICY "Akses Publik grocery_history" ON public.grocery_history FOR ALL U
 
     this.renderBudgetHeader(summary);
 
-    if (this.activeTab === 'belanja') {
+    const currentTab = this.activeTab || 'belanja';
+
+    // Ensure corresponding tab content is visible and others hidden
+    ['belanja', 'rencana', 'riwayat', 'anggaran'].forEach(id => {
+      const el = document.getElementById(`tab-content-${id}`);
+      if (el) {
+        if (id === currentTab) {
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
+      }
+    });
+
+    // Ensure bottom nav button active state is synced
+    document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+      const target = btn.getAttribute('data-tab');
+      const icon = btn.querySelector('.nav-icon-wrapper');
+      const text = btn.querySelector('.nav-text');
+      if (target === currentTab) {
+        btn.classList.add('text-emerald-400');
+        btn.classList.remove('text-slate-400');
+        if (icon) {
+          icon.classList.add('bg-emerald-500/20', 'text-emerald-400');
+          icon.classList.remove('text-slate-400');
+        }
+        if (text) text.classList.add('font-bold');
+      } else {
+        btn.classList.remove('text-emerald-400');
+        btn.classList.add('text-slate-400');
+        if (icon) {
+          icon.classList.remove('bg-emerald-500/20', 'text-emerald-400');
+          icon.classList.add('text-slate-400');
+        }
+        if (text) text.classList.remove('font-bold');
+      }
+    });
+
+    if (currentTab === 'belanja') {
       this.renderBelanjaTab(summary);
-    } else if (this.activeTab === 'rencana') {
+    } else if (currentTab === 'rencana') {
       this.renderRencanaTab(summary);
-    } else if (this.activeTab === 'riwayat') {
+    } else if (currentTab === 'riwayat') {
       this.renderRiwayatTab();
-    } else if (this.activeTab === 'anggaran') {
+    } else if (currentTab === 'anggaran') {
       this.renderAnggaranTab(summary);
     } else {
       this.activeTab = 'belanja';

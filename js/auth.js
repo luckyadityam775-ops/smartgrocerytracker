@@ -20,32 +20,36 @@ const Auth = {
     if (!users || users.length === 0) {
       users = window.SEED_DATA && window.SEED_DATA.users ? [...window.SEED_DATA.users] : [];
       this.saveUsers(users);
+    }
 
-      // Seed data for each initial user
-      users.forEach(user => {
-        const seedKey = `userData_${user.id}`;
-        if (window.SEED_DATA && window.SEED_DATA[seedKey]) {
+    // Ensure seed data exists for demo users in localStorage
+    if (window.SEED_DATA) {
+      const seedUsers = window.SEED_DATA.users || [];
+      seedUsers.forEach(u => {
+        const seedKey = `userData_${u.id}`;
+        if (window.SEED_DATA[seedKey]) {
           const uData = window.SEED_DATA[seedKey];
-          localStorage.setItem(`smartgrocery_${user.id}_budget`, JSON.stringify(uData.budgetSettings));
-          localStorage.setItem(`smartgrocery_${user.id}_cart`, JSON.stringify(uData.activeCart));
-          localStorage.setItem(`smartgrocery_${user.id}_catalog`, JSON.stringify(uData.catalog));
-          localStorage.setItem(`smartgrocery_${user.id}_history`, JSON.stringify(uData.history));
-          localStorage.setItem(`smartgrocery_${user.id}_cart_discount`, JSON.stringify(uData.cartDiscount));
+          if (!localStorage.getItem(`smartgrocery_${u.id}_budget`)) {
+            localStorage.setItem(`smartgrocery_${u.id}_budget`, JSON.stringify(uData.budgetSettings));
+          }
+          if (!localStorage.getItem(`smartgrocery_${u.id}_cart`)) {
+            localStorage.setItem(`smartgrocery_${u.id}_cart`, JSON.stringify(uData.activeCart));
+          }
+          if (!localStorage.getItem(`smartgrocery_${u.id}_catalog`)) {
+            localStorage.setItem(`smartgrocery_${u.id}_catalog`, JSON.stringify(uData.catalog));
+          }
+          if (!localStorage.getItem(`smartgrocery_${u.id}_history`)) {
+            localStorage.setItem(`smartgrocery_${u.id}_history`, JSON.stringify(uData.history));
+          }
+          if (!localStorage.getItem(`smartgrocery_${u.id}_cart_discount`)) {
+            localStorage.setItem(`smartgrocery_${u.id}_cart_discount`, JSON.stringify(uData.cartDiscount));
+          }
         }
       });
     }
 
-    // Default to Rian so that on opening Live Server, the entire app is immediately visible and functional!
-    // But if user explicitly logged out or wants login gatekeeper (?login=1), respect that!
-    const urlParams = (typeof window !== 'undefined' && window.location) ? new URLSearchParams(window.location.search) : null;
-    const explicitlyLoggedOut = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('smartgrocery_logged_out') === '1') || 
-                                (urlParams && (urlParams.get('auth') === 'login' || urlParams.get('login') === '1'));
-
-    if (explicitlyLoggedOut) {
-      this.setActiveUser(null);
-    } else if (!this.getCurrentUser() && users.length > 0) {
-      this.setActiveUser(users[0]);
-    }
+    // Setiap buka aplikasi, SELALU masuk ke halaman login form terlebih dahulu!
+    this.setActiveUser(null);
 
     // Asynchronously synchronize with server database file /api/users
     this.syncWithServerDatabase();
@@ -156,6 +160,15 @@ const Auth = {
       );
     }
 
+    // 3. Known Demo Alias Mapping
+    if (!user) {
+      if (cleanId === 'rian' || cleanId === 'rian@kost.id' || cleanId === 'user@grocerysafe.id' || cleanId === 'user_rian' || cleanId === 'pengguna' || cleanId === 'user') {
+        user = users.find(u => u.id === 'user_rian');
+      } else if (cleanId === 'aditya' || cleanId === 'aditya@kampus.id' || cleanId === 'aditya@grocerysafe.id' || cleanId === 'user_aditya') {
+        user = users.find(u => u.id === 'user_aditya');
+      }
+    }
+
     // If account not found, REQUIRE sign up first!
     if (!user) {
       return { 
@@ -165,13 +178,14 @@ const Auth = {
       };
     }
 
-    // Check password if set
+    // Check password if set (Support user password or demo password 123)
     if (user.password && cleanPass) {
-      if (String(user.password).trim() !== cleanPass) {
+      const isDemoPass = cleanPass === '123' && (user.id === 'user_rian' || user.id === 'user_aditya' || user.password === '123');
+      if (String(user.password).trim() !== cleanPass && !isDemoPass) {
         return { 
           success: false, 
           code: 'WRONG_PASSWORD', 
-          message: 'Password salah! Periksa kembali password Anda atau gunakan akun demo.' 
+          message: 'Password salah! Periksa kembali password Anda atau gunakan akun demo (Password: 123).' 
         };
       }
     } else if (user.password && !cleanPass) {
@@ -369,8 +383,15 @@ const Auth = {
    * Switch active account directly
    */
   switchAccount(userId) {
-    const users = this.getAllUsers();
-    const user = users.find(u => u.id === userId);
+    let users = this.getAllUsers();
+    let user = users.find(u => u.id === userId);
+    if (!user && window.SEED_DATA && window.SEED_DATA.users) {
+      user = window.SEED_DATA.users.find(u => u.id === userId);
+      if (user) {
+        users.push(user);
+        this.saveUsers(users);
+      }
+    }
     if (user) {
       this.setActiveUser(user);
       return true;

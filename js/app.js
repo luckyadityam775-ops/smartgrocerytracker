@@ -112,7 +112,7 @@ function bootApp() {
       }
     }
 
-    if (requestedAction === 'quickadd') {
+    if (requestedAction === 'quickadd' && window.Auth && window.Auth.getCurrentUser()) {
       setTimeout(() => {
         if (window.UI && typeof window.UI.openAddItemModal === 'function') {
           window.UI.openAddItemModal();
@@ -133,7 +133,7 @@ function bootApp() {
         .catch((err) => {
           console.warn('[PWA] Service Worker registration failed:', err);
         });
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // PWA ready
