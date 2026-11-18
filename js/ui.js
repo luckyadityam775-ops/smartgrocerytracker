@@ -17,13 +17,8 @@ const UI = {
    * @param {Array<number>|number} pattern 
    */
   vibrate(pattern = 50) {
-    if ('vibrate' in navigator) {
-      try {
-        navigator.vibrate(pattern);
-      } catch (e) {
-        // Ignore devices where vibration is disabled or unsupported
-      }
-    }
+    // Disabled physical motor vibration to prevent hardware jitter & tap latency
+    return;
   },
 
   /**
@@ -50,16 +45,6 @@ const UI = {
       allSavings
     } = summary;
 
-    // Trigger danger vibration effect once when crossing into danger zone
-    if (safetyStatus === 'danger') {
-      if (!this.hapticTriggered) {
-        this.vibrate([200, 100, 200, 100, 300]);
-        this.hapticTriggered = true;
-      }
-    } else {
-      this.hapticTriggered = false;
-    }
-
     // Colors and visual alerts [SRS F-05]
     let barColor = 'bg-emerald-500';
     let badgeBg = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
@@ -80,10 +65,10 @@ const UI = {
       balanceTextColor = 'text-rose-400 font-extrabold';
       headerBorder = 'border-rose-500';
       containerBg = 'bg-rose-950/95 shadow-2xl shadow-rose-950/80';
-      shakeClass = 'animate-shake';
+      shakeClass = ''; // Header remains stable without jitter
     }
 
-    container.className = `sticky top-0 z-30 ${containerBg} backdrop-blur-md border-b ${headerBorder} px-3.5 py-2 transition-all duration-300 ${shakeClass} shadow-md`;
+    container.className = `sticky top-0 z-30 ${containerBg} backdrop-blur-md border-b ${headerBorder} px-3.5 py-2 transition-all duration-300 shadow-md`;
 
     container.innerHTML = `
       <div class="flex items-center justify-between gap-2 mb-1.5">
@@ -165,6 +150,58 @@ const UI = {
   },
 
   /**
+   * Render Checkout Summary Card HTML
+   */
+  renderCheckoutSummaryHtml(summary) {
+    const { items, grandTotal, allSavings, totalItemsCount } = summary;
+    return `
+      <div class="${summary.isOverbudget ? 'bg-gradient-to-r from-rose-950/70 to-slate-900/90 border-rose-500/40' : 'bg-gradient-to-r from-emerald-950/60 to-slate-900/90 border-emerald-500/20'} rounded-2xl p-4 border mb-4 shadow-xl">
+        <!-- Header Rincian Pembelian Belanja -->
+        <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800/80">
+          <div class="flex items-center gap-1.5 text-xs font-bold text-white">
+            <i data-lucide="receipt" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>Rincian Belanja (${items.length} Macam / ${totalItemsCount} Barang)</span>
+          </div>
+        </div>
+
+        <!-- Itemized Breakdown List -->
+        <div class="space-y-1.5 max-h-52 overflow-y-auto pr-1 mb-3">
+          ${items.map(item => `
+            <div class="flex items-center justify-between text-[11px] py-1 border-b border-slate-800/40">
+              <div class="flex-1 min-w-0 pr-2">
+                <span class="font-medium text-slate-200 block truncate">${item.name}</span>
+                <span class="text-[10px] text-slate-400 font-mono">${item.qty} ${item.unit || 'pcs'} × ${Calculator.formatRupiah(item.discountInfo && item.discountInfo.finalPrice ? item.discountInfo.finalPrice : item.currentPrice)}</span>
+              </div>
+              <div class="text-right shrink-0">
+                <span class="font-bold text-slate-200">${Calculator.formatRupiah(item.subtotalFinal)}</span>
+                ${item.subtotalSavings > 0 ? `<span class="text-[9px] text-emerald-400 block font-semibold">-Hemat ${Calculator.formatRupiah(item.subtotalSavings)}</span>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Grand Total Summary -->
+        <div class="pt-2 border-t border-slate-800/80 space-y-1">
+          <div class="flex items-center justify-between text-xs text-slate-300">
+            <span>Total Item Belanja:</span>
+            <span class="font-bold text-white">${totalItemsCount} barang</span>
+          </div>
+          ${allSavings > 0 ? `
+            <div class="flex items-center justify-between text-xs text-emerald-400">
+              <span>Total Hemat Promo:</span>
+              <span class="font-bold">${Calculator.formatRupiah(allSavings)}</span>
+            </div>
+          ` : ''}
+          <div class="flex items-center justify-between text-sm font-extrabold text-white pt-2 border-t border-slate-800">
+            <span>Total Pembayaran:</span>
+            <span class="text-base ${summary.isOverbudget ? 'text-rose-400 font-black' : 'text-emerald-400'}">${Calculator.formatRupiah(grandTotal)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  /**
    * Render Tab 1: Belanja (Cart Items List, Store/Date Session & Controls) [SRS F-01, F-02, F-03, F-04]
    */
   renderBelanjaTab(summary) {
@@ -172,6 +209,43 @@ const UI = {
     if (!container) return;
 
     const { items, grandTotal, allSavings, totalItemsCount } = summary;
+
+    // Fast In-Place Update: If cart cards already exist in DOM, update values with 0ms delay!
+    const existingList = document.getElementById('cart-items-list');
+    const existingCards = existingList ? existingList.querySelectorAll('.glass-card[data-id]') : [];
+    const existingIds = Array.from(existingCards).map(el => el.getAttribute('data-id'));
+    const currentIds = items.map(i => i.id);
+
+    const isSameStructure = existingList && items.length > 0 &&
+      existingIds.length === currentIds.length &&
+      currentIds.every((id, idx) => id === existingIds[idx]);
+
+    if (isSameStructure) {
+      items.forEach(item => {
+        const card = existingList.querySelector(`.glass-card[data-id="${item.id}"]`);
+        if (card) {
+          const qtyInput = card.querySelector('.qty-input-inline');
+          if (qtyInput && document.activeElement !== qtyInput) {
+            qtyInput.value = item.qty;
+          }
+          const subtotalEl = card.querySelector('.row-subtotal-val');
+          if (subtotalEl) {
+            subtotalEl.textContent = Calculator.formatRupiah(item.subtotalFinal);
+          }
+        }
+      });
+
+      const countEl = document.getElementById('cart-header-count');
+      if (countEl) countEl.textContent = totalItemsCount;
+
+      const checkoutCard = document.getElementById('checkout-summary-card-container');
+      if (checkoutCard) {
+        checkoutCard.innerHTML = this.renderCheckoutSummaryHtml(summary);
+        lucide.createIcons();
+      }
+      return;
+    }
+
     const sessionInfo = Store.getSessionInfo ? Store.getSessionInfo() : { storeName: "Lotte Mart Grocery - Puri Indah", date: "2026-10-26" };
     const storeLocations = Store.getStoreLocations ? Store.getStoreLocations() : [
       "Lotte Mart Grocery - Puri Indah",
@@ -278,7 +352,7 @@ const UI = {
               <!-- Real-time Subtotal per Row [F-02] -->
               <div class="text-right">
                 <span class="text-[10px] text-slate-400 uppercase font-medium block">Subtotal</span>
-                <span class="text-sm font-extrabold text-emerald-400 leading-none">
+                <span class="row-subtotal-val text-sm font-extrabold text-emerald-400 leading-none" data-id="${item.id}">
                   ${Calculator.formatRupiah(item.subtotalFinal)}
                 </span>
               </div>
@@ -334,7 +408,7 @@ const UI = {
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
             <i data-lucide="shopping-bag" class="w-4 h-4 text-emerald-400"></i>
-            <span>Keranjang Aktif (<strong class="text-white">${totalItemsCount}</strong> item)</span>
+            <span>Keranjang Aktif (<strong id="cart-header-count" class="text-white">${totalItemsCount}</strong> item)</span>
           </div>
 
           ${items.length > 0 ? `
@@ -355,7 +429,7 @@ const UI = {
           <div class="mt-6 pt-4 border-t border-slate-800/80 pb-20">
             <!-- Pemberitahuan Merah jika Overbudget saat mau menyelesaikan belanja -->
             ${summary.isOverbudget ? `
-              <div class="mb-4 p-4 rounded-2xl bg-rose-950/90 border-2 border-rose-500/80 text-rose-200 shadow-2xl shadow-rose-950/80 animate-shake">
+              <div class="mb-4 p-4 rounded-2xl bg-rose-950/90 border-2 border-rose-500/80 text-rose-200 shadow-2xl shadow-rose-950/80">
                 <div class="flex items-start gap-3">
                   <div class="w-8 h-8 rounded-xl bg-rose-500/30 text-rose-400 flex items-center justify-center shrink-0 mt-0.5 border border-rose-500/50">
                     <i data-lucide="alert-octagon" class="w-5 h-5 text-rose-300"></i>
@@ -381,52 +455,13 @@ const UI = {
               </div>
             ` : ''}
 
-            <div class="${summary.isOverbudget ? 'bg-gradient-to-r from-rose-950/70 to-slate-900/90 border-rose-500/40' : 'bg-gradient-to-r from-emerald-950/60 to-slate-900/90 border-emerald-500/20'} rounded-2xl p-4 border mb-4 shadow-xl">
-              <!-- Header Rincian Pembelian Belanja -->
-              <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800/80">
-                <div class="flex items-center gap-1.5 text-xs font-bold text-white">
-                  <i data-lucide="receipt" class="w-3.5 h-3.5 text-emerald-400"></i>
-                  <span>Rincian Belanja (${items.length} Macam / ${totalItemsCount} Barang)</span>
-                </div>
-              </div>
-
-              <!-- Itemized Breakdown List -->
-              <div class="space-y-1.5 max-h-52 overflow-y-auto pr-1 mb-3">
-                ${items.map(item => `
-                  <div class="flex items-center justify-between text-[11px] py-1 border-b border-slate-800/40">
-                    <div class="flex-1 min-w-0 pr-2">
-                      <span class="font-medium text-slate-200 block truncate">${item.name}</span>
-                      <span class="text-[10px] text-slate-400 font-mono">${item.qty} ${item.unit || 'pcs'} × ${Calculator.formatRupiah(item.discountInfo && item.discountInfo.finalPrice ? item.discountInfo.finalPrice : item.currentPrice)}</span>
-                    </div>
-                    <div class="text-right shrink-0">
-                      <span class="font-bold text-slate-200">${Calculator.formatRupiah(item.subtotalFinal)}</span>
-                      ${item.subtotalSavings > 0 ? `<span class="text-[9px] text-emerald-400 block font-semibold">-Hemat ${Calculator.formatRupiah(item.subtotalSavings)}</span>` : ''}
-                    </div>
-                  </div>
-                `).join('')}
-              </div>
-
-              <!-- Grand Total Summary -->
-              <div class="pt-2 border-t border-slate-800/80 space-y-1">
-                <div class="flex items-center justify-between text-xs text-slate-300">
-                  <span>Total Item Belanja:</span>
-                  <span class="font-bold text-white">${totalItemsCount} barang</span>
-                </div>
-                ${allSavings > 0 ? `
-                  <div class="flex items-center justify-between text-xs text-emerald-400">
-                    <span>Total Hemat Promo:</span>
-                    <span class="font-bold">${Calculator.formatRupiah(allSavings)}</span>
-                  </div>
-                ` : ''}
-                <div class="flex items-center justify-between text-sm font-extrabold text-white pt-2 border-t border-slate-800">
-                  <span>Total Pembayaran:</span>
-                  <span class="text-base ${summary.isOverbudget ? 'text-rose-400 font-black' : 'text-emerald-400'}">${Calculator.formatRupiah(grandTotal)}</span>
-                </div>
-              </div>
+            <!-- Checkout Summary Card Container -->
+            <div id="checkout-summary-card-container">
+              ${this.renderCheckoutSummaryHtml(summary)}
             </div>
 
             <!-- [F-06] Primary Action: Selesaikan & Simpan Belanja Bulan Ini -->
-            <button id="btn-finish-shopping" class="w-full py-3.5 px-4 rounded-2xl ${summary.isOverbudget ? 'bg-gradient-to-r from-rose-600 via-rose-500 to-red-700 hover:from-rose-500 hover:to-red-600 shadow-rose-950/60 animate-pulse' : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-900/40'} text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg touch-scale">
+            <button id="btn-finish-shopping" class="w-full py-3.5 px-4 rounded-2xl ${summary.isOverbudget ? 'bg-gradient-to-r from-rose-600 via-rose-500 to-red-700 hover:from-rose-500 hover:to-red-600 shadow-rose-950/60' : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-900/40'} text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg touch-scale">
               <i data-lucide="${summary.isOverbudget ? 'alert-triangle' : 'check-circle-2'}" class="w-5 h-5"></i>
               <span>${summary.isOverbudget ? 'Selesaikan Belanja (Peringatan Overbudget)' : 'Selesaikan & Simpan Belanja Bulan Ini'}</span>
             </button>
@@ -484,7 +519,6 @@ const UI = {
     document.querySelectorAll('.btn-qty-plus').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = e.currentTarget.getAttribute('data-id');
-        this.vibrate(20);
         Store.updateItemQty(id, 1);
       });
     });
@@ -493,7 +527,6 @@ const UI = {
     document.querySelectorAll('.btn-qty-minus').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = e.currentTarget.getAttribute('data-id');
-        this.vibrate(20);
         Store.updateItemQty(id, -1);
       });
     });
@@ -513,7 +546,6 @@ const UI = {
     document.querySelectorAll('.btn-delete-item').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = e.currentTarget.getAttribute('data-id');
-        this.vibrate(40);
         Store.removeCartItem(id);
         this.showToast('Barang berhasil dihapus dari keranjang.');
       });
@@ -526,7 +558,6 @@ const UI = {
         const cart = Store.getActiveCart();
         const item = cart.find(i => i.id === id);
         if (item) {
-          this.vibrate(20);
           this.openAddItemModal(item);
         }
       });
@@ -2226,8 +2257,8 @@ const UI = {
 
     document.getElementById('modal-confirm-finish').addEventListener('click', () => {
       Store.archiveCurrentCart(summary);
-      this.vibrate([100, 50, 100]);
       modal.classList.add('hidden');
+      this.showToast('✅ Belanja berhasil diselesaikan & diarsipkan ke Riwayat.');
       // Switch to Riwayat tab to view the archived receipt
       this.switchTab('riwayat');
     });

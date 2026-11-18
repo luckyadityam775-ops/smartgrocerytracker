@@ -147,8 +147,8 @@
         window.SupabaseDB.syncSnapshot(snapshot);
       }
 
-      // 5. Sync to local LAN server endpoint (/api/sync)
-      if (typeof fetch === 'function' && typeof window !== 'undefined' && window.location && window.location.protocol && window.location.protocol.startsWith('http')) {
+      // 5. Sync to local LAN server endpoint (/api/sync) only if enabled
+      if (window.__enableLanSync && typeof fetch === 'function' && typeof window !== 'undefined' && window.location && window.location.protocol && window.location.protocol.startsWith('http')) {
         try {
           fetch('./api/sync', {
             method: 'POST',

@@ -181,48 +181,46 @@ const SupabaseDB = {
         .eq('user_id', uid)
         .order('created_at', { ascending: false });
 
-      // Auto-migrate legacy rows if this is a newly assigned stable Google ID
-      if ((!cartData || cartData.length === 0) && uid.startsWith('user_google_')) {
-        const { data: legacyRows } = await window.supabaseClient
-          .from('grocery_cart')
-          .select('*')
-          .order('updated_at', { ascending: false })
-          .limit(20);
-        if (legacyRows && legacyRows.length > 0) {
-          cartData = legacyRows;
-          await window.supabaseClient
-            .from('grocery_cart')
-            .update({ user_id: uid })
-            .in('id', legacyRows.map(r => r.id));
-        }
-      }
-
-      if (!cartErr && Array.isArray(cartData) && cartData.length > 0) {
-        const localCart = cartData.map(row => ({
-          id: row.id,
-          name: row.name,
-          category: row.category || 'Bahan Pokok',
-          unit: row.unit || 'pcs',
-          qty: parseFloat(row.qty) || 1,
-          currentPrice: parseFloat(row.current_price) || 0,
-          lastPrice: parseFloat(row.last_price) || 0,
-          discountType: row.discount_type || 'none',
-          discountA: parseFloat(row.discount_a) || 0,
-          discountB: parseFloat(row.discount_b) || 0,
-          discountNominal: parseFloat(row.discount_nominal) || 0,
-          createdAt: row.created_at
-        }));
-
-        this.isApplyingRemote = true;
-        try {
-          if (window.Store) {
-            window.Store.applySnapshot({
-              type: 'cart',
-              data: localCart
-            });
+      if (!cartErr && Array.isArray(cartData)) {
+        if (cartData.length === 0) {
+          this.isApplyingRemote = true;
+          try {
+            if (window.Store) {
+              window.Store.applySnapshot({
+                type: 'cart',
+                data: []
+              });
+            }
+          } finally {
+            this.isApplyingRemote = false;
           }
-        } finally {
-          this.isApplyingRemote = false;
+        } else {
+          const localCart = cartData.map(row => ({
+            id: row.id,
+            name: row.name,
+            category: row.category || 'Bahan Pokok',
+            unit: row.unit || 'pcs',
+            qty: parseFloat(row.qty) || 1,
+            currentPrice: parseFloat(row.current_price) || 0,
+            lastPrice: parseFloat(row.last_price) || 0,
+            discountType: row.discount_type || 'none',
+            discountA: parseFloat(row.discount_a) || 0,
+            discountB: parseFloat(row.discount_b) || 0,
+            discountNominal: parseFloat(row.discount_nominal) || 0,
+            createdAt: row.created_at
+          }));
+
+          this.isApplyingRemote = true;
+          try {
+            if (window.Store) {
+              window.Store.applySnapshot({
+                type: 'cart',
+                data: localCart
+              });
+            }
+          } finally {
+            this.isApplyingRemote = false;
+          }
         }
       }
 

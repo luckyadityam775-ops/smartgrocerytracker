@@ -153,21 +153,21 @@ const Store = {
   getActiveCart() {
     try {
       const data = localStorage.getItem(this.getKey('cart'));
-      if (data && data !== '[]') {
+      if (data !== null) {
         return JSON.parse(data);
       }
-      // If user's cart has never been populated or is empty on first open:
+      // If user's cart has never existed in storage at all (first-time brand new visitor)
       const isExplicitlyCleared = localStorage.getItem(this.getKey('cart_cleared')) === '1';
-      if (!isExplicitlyCleared && (!data || data === '[]')) {
-        const starter = (typeof SEED_DATA !== 'undefined' && SEED_DATA.userData_user_rian)
-          ? SEED_DATA.userData_user_rian.activeCart.map(item => ({ ...item }))
-          : [];
-        if (starter.length > 0) {
+      if (!isExplicitlyCleared) {
+        const user = window.Auth ? window.Auth.getCurrentUser() : null;
+        const isRian = !user || user.id === 'user_rian';
+        if (isRian && typeof SEED_DATA !== 'undefined' && SEED_DATA.userData_user_rian) {
+          const starter = SEED_DATA.userData_user_rian.activeCart.map(item => ({ ...item }));
           localStorage.setItem(this.getKey('cart'), JSON.stringify(starter));
           return starter;
         }
       }
-      return data ? JSON.parse(data) : [];
+      return [];
     } catch (e) {
       return [];
     }
@@ -185,8 +185,10 @@ const Store = {
   saveActiveCart(cart) {
     if (cart && Array.isArray(cart) && cart.length > 0) {
       localStorage.removeItem(this.getKey('cart_cleared'));
+    } else {
+      localStorage.setItem(this.getKey('cart_cleared'), '1');
     }
-    localStorage.setItem(this.getKey('cart'), JSON.stringify(cart));
+    localStorage.setItem(this.getKey('cart'), JSON.stringify(cart || []));
     this.notifyChange('cart');
   },
 
@@ -590,6 +592,11 @@ const Store = {
     if (!snapshot) return;
     try {
       if (snapshot.type === 'cart' && Array.isArray(snapshot.data)) {
+        if (snapshot.data.length === 0) {
+          localStorage.setItem(this.getKey('cart_cleared'), '1');
+        } else {
+          localStorage.removeItem(this.getKey('cart_cleared'));
+        }
         localStorage.setItem(this.getKey('cart'), JSON.stringify(snapshot.data));
         if (snapshot.discount) {
           localStorage.setItem(this.getKey('cart_discount'), JSON.stringify(snapshot.discount));
@@ -634,4 +641,9 @@ const Store = {
   }
 };
 
-window.Store = Store;
+if (typeof window !== 'undefined') {
+  window.Store = Store;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = Store;
+}

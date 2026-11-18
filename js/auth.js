@@ -401,17 +401,7 @@ const Auth = {
       // Connect and sync with Supabase Cloud Realtime Database immediately
       if (window.SupabaseDB) {
         window.SupabaseDB.init();
-        window.SupabaseDB.pullUserData(existing.id).then(() => {
-          const currentCart = window.Store ? window.Store.getActiveCart() : [];
-          if (!currentCart || currentCart.length === 0) {
-            const starter = (typeof SEED_DATA !== 'undefined' && SEED_DATA.userData_user_rian)
-              ? SEED_DATA.userData_user_rian.activeCart.map(item => ({ ...item }))
-              : [];
-            if (starter.length > 0 && window.Store) {
-              window.Store.saveActiveCart(starter);
-            }
-          }
-        });
+        window.SupabaseDB.pullUserData(existing.id);
       }
 
       if (window.UI) {
