@@ -68,68 +68,68 @@ const UI = {
       shakeClass = ''; // Header remains stable without jitter
     }
 
-    container.className = `sticky top-0 z-30 ${containerBg} backdrop-blur-md border-b ${headerBorder} px-3 py-1.5 transition-all duration-300 shadow-md`;
+    container.className = `sticky top-0 z-30 ${containerBg} backdrop-blur-md border-b ${headerBorder} px-3.5 py-2 transition-all duration-300 shadow-md`;
 
     container.innerHTML = `
-      <div class="flex items-center justify-between gap-1.5 mb-1">
+      <div class="flex items-center justify-between gap-1.5 mb-1.5">
         <div class="flex items-center gap-1.5">
-          <span class="inline-flex items-center justify-center w-4 h-4 rounded-md ${safetyStatus === 'danger' ? 'bg-rose-500 text-white' : safetyStatus === 'warning' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'}">
-            <i data-lucide="${safetyStatus === 'danger' ? 'alert-triangle' : 'shield-check'}" class="w-3 h-3"></i>
+          <span class="inline-flex items-center justify-center w-[18px] h-[18px] rounded-md ${safetyStatus === 'danger' ? 'bg-rose-500 text-white' : safetyStatus === 'warning' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'}">
+            <i data-lucide="${safetyStatus === 'danger' ? 'alert-triangle' : 'shield-check'}" class="w-3.5 h-3.5"></i>
           </span>
-          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Budget Safety Cap</span>
+          <span class="text-[10.5px] font-bold uppercase tracking-wider text-slate-300">Budget Safety Cap</span>
         </div>
-        <button id="btn-quick-edit-budget" class="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white flex items-center gap-1 touch-scale border border-slate-700">
+        <button id="btn-quick-edit-budget" class="text-[9.5px] px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 hover:text-white flex items-center gap-1 touch-scale border border-slate-700">
           <i data-lucide="edit-3" class="w-2.5 h-2.5 text-emerald-400"></i>
           <span>Ubah Batas</span>
         </button>
       </div>
 
       <!-- Main Balance Equation [Batas Saldo] - [Total Belanja] = [Sisa Saldo] -->
-      <div class="grid grid-cols-3 gap-1 text-center bg-slate-900/90 rounded-lg py-1 px-1 border ${safetyStatus === 'danger' ? 'border-rose-500/50' : 'border-slate-800/80'} shadow-inner">
+      <div class="grid grid-cols-3 gap-1 text-center bg-slate-900/90 rounded-xl py-1.5 px-1.5 border ${safetyStatus === 'danger' ? 'border-rose-500/50' : 'border-slate-800/80'} shadow-inner">
         <div class="flex flex-col items-center justify-center">
-          <span class="text-[8px] text-slate-400 uppercase font-semibold leading-none mb-0.5">Batas Saldo</span>
-          <span class="text-[10.5px] font-bold text-slate-200 truncate max-w-full leading-tight">${Calculator.formatRupiah(budgetLimit)}</span>
+          <span class="text-[8.5px] text-slate-400 uppercase font-semibold leading-none mb-0.5">Batas Saldo</span>
+          <span class="text-[11.5px] sm:text-xs font-bold text-slate-200 truncate max-w-full leading-tight">${Calculator.formatRupiah(budgetLimit)}</span>
         </div>
         <div class="flex flex-col items-center justify-center border-x border-slate-800">
-          <span class="text-[8px] text-slate-400 uppercase font-semibold leading-none mb-0.5">Total Belanja</span>
-          <span class="text-[10.5px] font-bold text-white truncate max-w-full leading-tight">${Calculator.formatRupiah(grandTotal)}</span>
+          <span class="text-[8.5px] text-slate-400 uppercase font-semibold leading-none mb-0.5">Total Belanja</span>
+          <span class="text-[11.5px] sm:text-xs font-bold text-white truncate max-w-full leading-tight">${Calculator.formatRupiah(grandTotal)}</span>
         </div>
         <div class="flex flex-col items-center justify-center">
-          <span class="text-[8px] text-slate-400 uppercase font-semibold leading-none mb-0.5">${isOverbudget ? 'Kurang (Minus)' : 'Sisa Saldo'}</span>
-          <span class="text-[10.5px] font-extrabold ${balanceTextColor} truncate max-w-full leading-tight">${Calculator.formatRupiah(remainingBudget)}</span>
+          <span class="text-[8.5px] text-slate-400 uppercase font-semibold leading-none mb-0.5">${isOverbudget ? 'Kurang (Minus)' : 'Sisa Saldo'}</span>
+          <span class="text-[11.5px] sm:text-xs font-extrabold ${balanceTextColor} truncate max-w-full leading-tight">${Calculator.formatRupiah(remainingBudget)}</span>
         </div>
       </div>
 
       <!-- Visual Safety Cap Bar & Indicator -->
-      <div class="mt-1">
-        <div class="flex items-center justify-between text-[9px] mb-0.5">
-          <div class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[8.5px] font-semibold ${badgeBg}">
+      <div class="mt-1.5">
+        <div class="flex items-center justify-between text-[9.5px] mb-1">
+          <div class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[9px] font-semibold ${badgeBg}">
             <span class="w-1.5 h-1.5 rounded-full ${barColor}"></span>
             <span>${safetyStatus === 'danger' ? 'Bahaya (>100%)' : safetyStatus === 'warning' ? (budgetUsagePercent >= 90 ? 'Waspada (≥90%)' : 'Waspada (≥80%)') : 'Aman (Terkendali)'}</span>
           </div>
           <div class="flex items-center gap-2">
-            ${allSavings > 0 ? `<span class="text-[8.5px] text-emerald-400 font-bold">Hemat ${Calculator.formatRupiah(allSavings)}</span>` : ''}
-            <span class="font-bold text-slate-300 text-[9px]">${budgetUsagePercent}% Terpakai</span>
+            ${allSavings > 0 ? `<span class="text-[9px] text-emerald-400 font-bold">Hemat ${Calculator.formatRupiah(allSavings)}</span>` : ''}
+            <span class="font-bold text-slate-300 text-[9.5px]">${budgetUsagePercent}% Terpakai</span>
           </div>
         </div>
         
-        <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden shadow-inner">
+        <div class="w-full h-[5px] bg-slate-800 rounded-full overflow-hidden shadow-inner">
           <div class="h-full rounded-full budget-bar-fill ${barColor}" style="width: ${Math.min(budgetUsagePercent, 100)}%"></div>
         </div>
 
         <!-- Warning Bar (≥90% / ≥80% - SRS F-05) -->
         ${safetyStatus === 'warning' ? `
-          <div id="warning-budget-banner" class="mt-1 py-0.5 px-2 bg-amber-500/20 border border-amber-500/40 rounded-md flex items-center gap-1 text-amber-200 text-[9px]">
-            <i data-lucide="alert-triangle" class="w-3 h-3 shrink-0 text-amber-400"></i>
+          <div id="warning-budget-banner" class="mt-1.5 py-1 px-2.5 bg-amber-500/20 border border-amber-500/40 rounded-lg flex items-center gap-1.5 text-amber-200 text-[9.5px]">
+            <i data-lucide="alert-triangle" class="w-3.5 h-3.5 shrink-0 text-amber-400"></i>
             <span class="font-medium leading-tight">Peringatan Waspada: Total belanja mendekati batas saldo dompet (${budgetUsagePercent >= 90 ? '≥90%' : '≥80%'})!</span>
           </div>
         ` : ''}
 
         <!-- Danger Banner (>100% - SRS F-05 Wajib Menyala Merah Tegas) -->
         ${safetyStatus === 'danger' ? `
-          <div id="danger-budget-banner" class="mt-1 py-1 px-2 bg-rose-600 text-white rounded-md flex items-center gap-1.5 shadow-md shadow-rose-900/50 animate-pulse-danger">
+          <div id="danger-budget-banner" class="mt-1.5 py-1.5 px-2.5 bg-rose-600 text-white rounded-lg flex items-center gap-1.5 shadow-md shadow-rose-900/50 animate-pulse-danger">
             <i data-lucide="alert-octagon" class="w-3.5 h-3.5 shrink-0 text-white"></i>
-            <div class="flex-1 text-[9px] leading-tight">
+            <div class="flex-1 text-[9.5px] leading-tight">
               <span class="font-black uppercase mr-1">BAHAYA SALDO MINUS:</span>
               <span>Total belanja melebihi batas saldo dompet! Kurangi kuantitas atau batalkan barang sekunder.</span>
             </div>
