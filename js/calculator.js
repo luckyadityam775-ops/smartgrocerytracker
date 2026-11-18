@@ -127,9 +127,11 @@ const Calculator = {
    * @param {Array} items List of cart items
    * @param {number} budgetLimit Batas saldo dompet
    * @param {object} cartDiscount Voucher / diskon keranjang
+   * @param {number} previousMonthlySpent Total pengeluaran sesi belanja yang sudah selesai bulan ini
    */
-  calculateCartSummary(items = [], budgetLimit = 500000, cartDiscount = { type: 'none', value: 0 }) {
+  calculateCartSummary(items = [], budgetLimit = 500000, cartDiscount = { type: 'none', value: 0 }, previousMonthlySpent = 0) {
     const parsedBudget = Math.max(0, this.parseNumber(budgetLimit));
+    const parsedPrevSpent = Math.max(0, this.parseNumber(previousMonthlySpent));
     let totalItemsCount = 0;
     let totalOriginal = 0;
     let totalItemsFinal = 0;
@@ -153,38 +155,64 @@ const Calculator = {
     }
     cartSavings = Math.min(totalItemsFinal, Math.max(0, cartSavings));
 
-    const grandTotal = Math.max(0, totalItemsFinal - cartSavings);
-    const allSavings = totalItemSavings + cartSavings;
-    const remainingBudget = parsedBudget - grandTotal;
-    const budgetUsagePercent = parsedBudget > 0 ? (grandTotal / parsedBudget) * 100 : (grandTotal > 0 ? 100 : 0);
+    // Belanja troli saat ini
+    const currentCartTotal = Math.max(0, totalItemsFinal - cartSavings);
+
+    // Total pengeluaran bulan ini (akumulasi riwayat belanja selesai + troli saat ini)
+    const totalMonthSpent = currentCartTotal + parsedPrevSpent;
+
+    // Sisa saldo dompet yang benar-benar tersisa (tetap berkurang sehabis belanja!)
+    const remainingBudget = parsedBudget - totalMonthSpent;
+
+    // Persentase penggunaan anggaran bulan ini
+    const budgetUsagePercent = parsedBudget > 0 ? (totalMonthSpent / parsedBudget) * 100 : (totalMonthSpent > 0 ? 100 : 0);
 
     // Safety Cap Status
-    // Jika tidak ada barang di keranjang, status WAJIB Aman (0% Terpakai, sisa saldo utuh, tidak ada peringatan)
     let safetyStatus = "safe";
     let statusLabel = "Aman: Belanjaan Terkendali";
     let statusColor = "emerald";
 
-    if (items.length > 0 && (remainingBudget < 0 || budgetUsagePercent > 100)) {
-      safetyStatus = "danger";
-      statusLabel = "Total belanja melebihi batas saldo dompet! Kurangi kuantitas atau batalkan barang sekunder.";
-      statusColor = "rose";
-    } else if (items.length > 0 && budgetUsagePercent >= 80) {
-      safetyStatus = "warning";
-      statusLabel = "Peringatan Waspada: Mendekati Batas Saldo Dompet!";
-      statusColor = "amber";
+    if (items.length > 0) {
+      // Ada barang di troli
+      if (remainingBudget < 0 || budgetUsagePercent > 100) {
+        safetyStatus = "danger";
+        statusLabel = "Total belanja melebihi batas saldo dompet! Kurangi kuantitas atau batalkan barang sekunder.";
+        statusColor = "rose";
+      } else if (budgetUsagePercent >= 80) {
+        safetyStatus = "warning";
+        statusLabel = "Peringatan Waspada: Mendekati Batas Saldo Dompet!";
+        statusColor = "amber";
+      }
+    } else {
+      // Troli kosong (0 item): tidak memicu alarm panik "kurangi barang"
+      if (remainingBudget < 0) {
+        safetyStatus = "warning";
+        statusLabel = "Batas saldo dompet bulan ini telah terpakai penuh.";
+        statusColor = "amber";
+      } else if (budgetUsagePercent >= 80) {
+        safetyStatus = "safe";
+        statusLabel = `Troli Kosong (Saldo Terpakai ${Math.round(budgetUsagePercent)}% Bulan Ini)`;
+        statusColor = "emerald";
+      } else {
+        safetyStatus = "safe";
+        statusLabel = "Aman: Belanjaan Terkendali";
+        statusColor = "emerald";
+      }
     }
 
     return {
       items: processedItems,
       totalItemsCount,
       totalOriginal,
-      currentCartTotal: grandTotal,
-      grandTotal,
-      allSavings,
+      currentCartTotal,
+      previousMonthlySpent: parsedPrevSpent,
+      totalMonthSpent,
+      grandTotal: currentCartTotal, // Belanja troli saat ini (Rp 0 jika kosong)
+      allSavings: totalItemSavings + cartSavings,
       budgetLimit: parsedBudget,
-      remainingBudget: items.length > 0 ? remainingBudget : parsedBudget,
-      budgetUsagePercent: items.length > 0 ? Math.min(100, Math.round(budgetUsagePercent)) : 0,
-      actualPercent: items.length > 0 ? budgetUsagePercent : 0,
+      remainingBudget, // Sisa saldo dompet yang konsisten dan akurat
+      budgetUsagePercent: Math.min(100, Math.round(budgetUsagePercent)),
+      actualPercent: budgetUsagePercent,
       safetyStatus,
       statusLabel,
       statusColor,

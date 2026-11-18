@@ -11,6 +11,27 @@ const SupabaseDB = {
   syncDebounceTimers: {},
 
   /**
+   * Resolve deterministic unified cloud user ID.
+   * All Google-authenticated users share 'user_google_shared' so HP & Laptop remain 100% in-sync.
+   */
+  getCloudUserId(userId = null) {
+    if (userId && userId !== 'user_rian' && userId !== 'user_aditya') {
+      if (String(userId).startsWith('user_google_') || String(userId).includes('@')) {
+        return 'user_google_shared';
+      }
+      return userId;
+    }
+    const user = window.Auth ? window.Auth.getCurrentUser() : null;
+    if (!user) return 'user_rian';
+    const id = user.id || '';
+    const email = (user.email || '').toLowerCase();
+    if (id.startsWith('user_google_') || user.role === 'Google User' || email.includes('@')) {
+      return 'user_google_shared';
+    }
+    return id;
+  },
+
+  /**
    * Initialize Supabase Database synchronization
    */
   init() {
@@ -59,11 +80,18 @@ const SupabaseDB = {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'grocery_budget' }, (payload) => {
           this.handleBudgetRemoteChange(payload);
         })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'grocery_history' }, (payload) => {
+          this.handleHistoryRemoteChange(payload);
+        })
         .subscribe((status) => {
           console.log('[SupabaseDB Realtime Status]', status);
           if (status === 'SUBSCRIBED') {
             const badge = document.getElementById('realtime-badge-text');
             if (badge) badge.innerText = 'LIVE CLOUD';
+            const badgeBtn = document.getElementById('btn-realtime-status');
+            if (badgeBtn) {
+              badgeBtn.className = 'flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-400 border border-sky-500/30 touch-scale transition-all';
+            }
           }
         });
     } catch (e) {
@@ -82,13 +110,12 @@ const SupabaseDB = {
     if (payload.originClientId && payload.originClientId === myClientId) return;
 
     const snapshot = payload.snapshot;
-    const user = window.Auth ? window.Auth.getCurrentUser() : null;
-    const currentUserId = user ? user.id : 'user_rian';
-
+    const myCloudId = this.getCloudUserId();
     const incomingUserId = payload.userId || snapshot.userId;
-    if (incomingUserId && incomingUserId !== currentUserId) {
-      const isSameGoogleUser = incomingUserId.startsWith('user_google_') && currentUserId.startsWith('user_google_');
-      if (!isSameGoogleUser) return;
+
+    if (incomingUserId && incomingUserId !== myCloudId) {
+      const isBothGoogle = String(incomingUserId).startsWith('user_google_') && String(myCloudId).startsWith('user_google_');
+      if (!isBothGoogle) return;
     }
 
     console.log('[Supabase Realtime Broadcast] Menerima update seketika dari perangkat lain:', snapshot.type);
@@ -111,20 +138,18 @@ const SupabaseDB = {
     // Skip own postgres echo if this client just wrote locally
     if (Date.now() - this.lastLocalWriteTime < 2500) return;
 
-    const user = window.Auth ? window.Auth.getCurrentUser() : null;
-    const currentUserId = user ? user.id : 'user_rian';
-
+    const myCloudId = this.getCloudUserId();
     const item = payload.new || payload.old;
     if (!item) return;
-    if (item.user_id && item.user_id !== currentUserId) {
-      const isSameGoogleUser = item.user_id.startsWith('user_google_') && currentUserId.startsWith('user_google_');
-      if (!isSameGoogleUser) return;
+    if (item.user_id && item.user_id !== myCloudId) {
+      const isBothGoogle = String(item.user_id).startsWith('user_google_') && String(myCloudId).startsWith('user_google_');
+      if (!isBothGoogle) return;
     }
 
     console.log('[SupabaseDB] Menerima pembaruan troli postgres:', payload.eventType);
     
     // Pull fresh cart from Supabase and apply locally
-    this.pullUserData(currentUserId);
+    this.pullUserData(myCloudId);
   },
 
   /**
@@ -135,14 +160,12 @@ const SupabaseDB = {
     // Skip own postgres echo if this client just wrote locally
     if (Date.now() - this.lastLocalWriteTime < 2500) return;
 
-    const user = window.Auth ? window.Auth.getCurrentUser() : null;
-    const currentUserId = user ? user.id : 'user_rian';
-
+    const myCloudId = this.getCloudUserId();
     const budget = payload.new;
     if (!budget) return;
-    if (budget.user_id && budget.user_id !== currentUserId) {
-      const isSameGoogleUser = budget.user_id.startsWith('user_google_') && currentUserId.startsWith('user_google_');
-      if (!isSameGoogleUser) return;
+    if (budget.user_id && budget.user_id !== myCloudId) {
+      const isBothGoogle = String(budget.user_id).startsWith('user_google_') && String(myCloudId).startsWith('user_google_');
+      if (!isBothGoogle) return;
     }
 
     console.log('[SupabaseDB] Menerima pembaruan saldo dompet postgres');
@@ -164,11 +187,30 @@ const SupabaseDB = {
   },
 
   /**
-   * Pull complete user grocery data from Supabase
+   * Handle incoming realtime payload for shopping history sessions
+   */
+  handleHistoryRemoteChange(payload) {
+    if (this.isApplyingRemote) return;
+    if (Date.now() - this.lastLocalWriteTime < 2500) return;
+
+    const myCloudId = this.getCloudUserId();
+    const item = payload.new || payload.old;
+    if (!item) return;
+    if (item.user_id && item.user_id !== myCloudId) {
+      const isBothGoogle = String(item.user_id).startsWith('user_google_') && String(myCloudId).startsWith('user_google_');
+      if (!isBothGoogle) return;
+    }
+
+    console.log('[SupabaseDB] Menerima pembaruan riwayat postgres:', payload.eventType);
+    this.pullUserData(myCloudId);
+  },
+
+  /**
+   * Pull complete user grocery data from Supabase (Cart, Budget, History)
    */
   async pullUserData(userId) {
     if (!window.supabaseClient) return;
-    const uid = userId || (window.Auth && window.Auth.getCurrentUser() ? window.Auth.getCurrentUser().id : 'user_rian');
+    const uid = this.getCloudUserId(userId);
 
     try {
       // 1. Fetch Cart Items
@@ -265,6 +307,53 @@ const SupabaseDB = {
           this.isApplyingRemote = false;
         }
       }
+
+      // 3. Fetch History Sessions
+      let { data: historyData, error: histErr } = await window.supabaseClient
+        .from('grocery_history')
+        .select('*')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false });
+
+      if (!histErr && Array.isArray(historyData)) {
+        const monthNames = [
+          "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+          "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+        ];
+        const localHistory = historyData.map(row => {
+          let mName = 'Belanja Bulanan';
+          if (row.transaction_date) {
+            const p = row.transaction_date.split('-');
+            if (p.length === 3) {
+              const mIdx = parseInt(p[1], 10) - 1;
+              if (mIdx >= 0 && mIdx < 12) mName = `${monthNames[mIdx]} ${p[0]}`;
+            }
+          }
+          return {
+            id: row.id,
+            date: row.transaction_date || new Date().toISOString().split('T')[0],
+            monthName: mName,
+            totalAmount: parseFloat(row.total_spent) || 0,
+            totalSavings: parseFloat(row.total_saved) || 0,
+            itemCount: Array.isArray(row.items) ? row.items.reduce((s, it) => s + (it.qty || 1), 0) : 0,
+            status: "Selesai Belanja",
+            items: row.items || [],
+            createdAt: row.created_at
+          };
+        });
+
+        this.isApplyingRemote = true;
+        try {
+          if (window.Store) {
+            window.Store.applySnapshot({
+              type: 'history',
+              data: localHistory
+            });
+          }
+        } finally {
+          this.isApplyingRemote = false;
+        }
+      }
     } catch (e) {
       console.warn('[SupabaseDB] Gagal menarik data:', e);
     }
@@ -279,8 +368,7 @@ const SupabaseDB = {
 
     this.lastLocalWriteTime = Date.now();
 
-    const user = window.Auth ? window.Auth.getCurrentUser() : null;
-    const userId = user ? user.id : (snapshot.userId || 'user_rian');
+    const cloudUserId = this.getCloudUserId();
 
     // 1. Broadcast instant WebSocket message to peer devices immediately (<50ms, zero lag!)
     if (this.realtimeChannel) {
@@ -290,7 +378,7 @@ const SupabaseDB = {
           event: 'grocery_sync',
           payload: {
             snapshot,
-            userId,
+            userId: cloudUserId,
             originClientId: window.Realtime ? window.Realtime.clientId : null
           }
         });
@@ -308,12 +396,12 @@ const SupabaseDB = {
     this.syncDebounceTimers[key] = setTimeout(async () => {
       try {
         if (snapshot.type === 'cart' && Array.isArray(snapshot.data)) {
-          await this.syncCartToSupabase(snapshot.data, userId);
+          await this.syncCartToSupabase(snapshot.data, cloudUserId);
         } else if (snapshot.type === 'budget' && snapshot.data) {
-          await this.syncBudgetToSupabase(snapshot.data, userId);
+          await this.syncBudgetToSupabase(snapshot.data, cloudUserId);
         } else if (snapshot.type === 'history' && Array.isArray(snapshot.data) && snapshot.data.length > 0) {
           const latestHistory = snapshot.data[0];
-          await this.syncHistoryToSupabase(latestHistory, userId);
+          await this.syncHistoryToSupabase(latestHistory, cloudUserId);
         }
       } catch (e) {
         console.warn('[SupabaseDB] Gagal sync snapshot ke Supabase:', e);
@@ -326,6 +414,7 @@ const SupabaseDB = {
    */
   async syncCartToSupabase(cartItems, userId) {
     if (!window.supabaseClient) return;
+    const uid = this.getCloudUserId(userId);
 
     // First delete old cart items for this user that are no longer in active cart
     const currentItemIds = cartItems.map(item => item.id);
@@ -336,21 +425,21 @@ const SupabaseDB = {
         await window.supabaseClient
           .from('grocery_cart')
           .delete()
-          .eq('user_id', userId)
+          .eq('user_id', uid)
           .not('id', 'in', `(${currentItemIds.map(id => `"${id}"`).join(',')})`);
       } else {
         // Troli dikosongkan
         await window.supabaseClient
           .from('grocery_cart')
           .delete()
-          .eq('user_id', userId);
+          .eq('user_id', uid);
         return;
       }
 
       // 2. Upsert existing/new items
       const rows = cartItems.map(item => ({
         id: item.id,
-        user_id: userId,
+        user_id: uid,
         name: item.name,
         category: item.category || 'Bahan Pokok',
         unit: item.unit || 'pcs',
@@ -383,10 +472,11 @@ const SupabaseDB = {
    */
   async syncBudgetToSupabase(budget, userId) {
     if (!window.supabaseClient) return;
+    const uid = this.getCloudUserId(userId);
 
     try {
       const row = {
-        user_id: userId,
+        user_id: uid,
         monthly_limit: budget.monthlyLimit || 500000,
         emergency_reserve: budget.emergencyReserve || 50000,
         user_name: budget.userName || 'Pengguna Utama',
@@ -412,15 +502,19 @@ const SupabaseDB = {
    */
   async syncHistoryToSupabase(historyItem, userId) {
     if (!window.supabaseClient || !historyItem) return;
+    const uid = this.getCloudUserId(userId);
 
     try {
+      const totalSpent = Number(historyItem.totalAmount || historyItem.total || historyItem.totalSpent || 0);
+      const totalSaved = Number(historyItem.totalSavings || historyItem.totalSaved || 0);
+
       const row = {
-        id: historyItem.id || ('hist_' + Date.now()),
-        user_id: userId,
+        id: historyItem.id || ('session_' + Date.now()),
+        user_id: uid,
         store_name: historyItem.storeName || 'Supermarket',
         transaction_date: historyItem.date || new Date().toISOString().split('T')[0],
-        total_spent: historyItem.total || 0,
-        total_saved: historyItem.totalSaved || 0,
+        total_spent: totalSpent,
+        total_saved: totalSaved,
         items: historyItem.items || [],
         created_at: historyItem.createdAt || new Date().toISOString()
       };
@@ -428,8 +522,25 @@ const SupabaseDB = {
       await window.supabaseClient
         .from('grocery_history')
         .upsert(row, { onConflict: 'id' });
+      console.log('[SupabaseDB] Riwayat belanja berhasil disimpan ke Supabase:', totalSpent);
     } catch (e) {
       console.warn('[SupabaseDB] Error syncHistoryToSupabase:', e);
+    }
+  },
+
+  /**
+   * Delete shopping history record from grocery_history table
+   */
+  async deleteHistoryFromSupabase(sessionId) {
+    if (!window.supabaseClient || !sessionId) return;
+    try {
+      await window.supabaseClient
+        .from('grocery_history')
+        .delete()
+        .eq('id', sessionId);
+      console.log('[SupabaseDB] Catatan riwayat dihapus dari Supabase:', sessionId);
+    } catch (e) {
+      console.warn('[SupabaseDB] Error deleteHistoryFromSupabase:', e);
     }
   },
 

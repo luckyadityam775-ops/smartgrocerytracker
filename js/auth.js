@@ -124,6 +124,17 @@ const Auth = {
           user.id = stableId;
           this.setActiveUser(user);
         }
+
+        // Ensure shared data key is populated for multi-device sync
+        try {
+          ['cart', 'budget', 'catalog', 'history', 'cart_discount'].forEach(k => {
+            const sharedVal = localStorage.getItem(`smartgrocery_user_google_shared_${k}`);
+            const specificVal = localStorage.getItem(`smartgrocery_${user.id}_${k}`);
+            if (!sharedVal && specificVal) {
+              localStorage.setItem(`smartgrocery_user_google_shared_${k}`, specificVal);
+            }
+          });
+        } catch (e) {}
       }
       return user;
     } catch (e) {

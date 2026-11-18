@@ -15,7 +15,20 @@ const Store = {
    */
   getKey(category) {
     const user = window.Auth ? window.Auth.getCurrentUser() : null;
-    const uid = user ? user.id : 'user_rian';
+    let uid = user ? user.id : 'user_rian';
+    if (uid && (uid.startsWith('user_google_') || (user && user.role === 'Google User') || (user && user.email && user.email.includes('@')))) {
+      uid = 'user_google_shared';
+      // Auto-migrate from any specific Google ID key to shared key if needed
+      try {
+        const sharedKey = `smartgrocery_user_google_shared_${category}`;
+        if (typeof localStorage !== 'undefined' && !localStorage.getItem(sharedKey) && user && user.id && user.id !== 'user_google_shared') {
+          const legacyVal = localStorage.getItem(`smartgrocery_${user.id}_${category}`);
+          if (legacyVal) {
+            localStorage.setItem(sharedKey, legacyVal);
+          }
+        }
+      } catch (e) {}
+    }
     return `smartgrocery_${uid}_${category}`;
   },
 
@@ -479,6 +492,12 @@ const Store = {
     const history = this.getHistory();
     const updated = history.filter(h => h.id !== sessionId);
     this.saveHistory(updated);
+
+    // Also delete from Supabase PostgreSQL database
+    if (window.SupabaseDB && typeof window.SupabaseDB.deleteHistoryFromSupabase === 'function') {
+      window.SupabaseDB.deleteHistoryFromSupabase(sessionId);
+    }
+
     return updated;
   },
 
