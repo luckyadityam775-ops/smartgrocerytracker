@@ -35,14 +35,16 @@ const Auth = {
       });
     }
 
-    // Auto-login only if session was previously active or explicitly requested via URL
+    // Default to Rian so that on opening Live Server, the entire app is immediately visible and functional!
+    // But if user explicitly logged out or wants login gatekeeper (?login=1), respect that!
     const urlParams = (typeof window !== 'undefined' && window.location) ? new URLSearchParams(window.location.search) : null;
-    const forceDemo = urlParams && (urlParams.get('demo') === '1' || urlParams.get('user'));
+    const explicitlyLoggedOut = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('smartgrocery_logged_out') === '1') || 
+                                (urlParams && (urlParams.get('auth') === 'login' || urlParams.get('login') === '1'));
 
-    if (forceDemo && !this.getCurrentUser() && users.length > 0) {
-      const requestedId = urlParams.get('user');
-      const targetUser = requestedId ? users.find(u => u.name.toLowerCase() === requestedId.toLowerCase() || u.id === requestedId) : users[0];
-      this.setActiveUser(targetUser || users[0]);
+    if (explicitlyLoggedOut) {
+      this.setActiveUser(null);
+    } else if (!this.getCurrentUser() && users.length > 0) {
+      this.setActiveUser(users[0]);
     }
 
     // Asynchronously synchronize with server database file /api/users
@@ -95,6 +97,9 @@ const Auth = {
 
   setActiveUser(user) {
     if (user) {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem('smartgrocery_logged_out');
+      }
       // Don't store plain password in active user session object
       const safeUser = {
         id: user.id,
@@ -364,6 +369,9 @@ const Auth = {
    * Logout user and return to login screen
    */
   logout() {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('smartgrocery_logged_out', '1');
+    }
     this.setActiveUser(null);
   },
 

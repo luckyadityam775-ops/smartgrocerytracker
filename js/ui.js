@@ -4,6 +4,11 @@
  */
 
 const UI = {
+  createIcons() {
+    if (typeof window !== 'undefined' && window.lucide && typeof window.lucide.createIcons === 'function') {
+      try { window.lucide.createIcons(); } catch (e) { console.warn('[Lucide]', e); }
+    }
+  },
   activeTab: 'belanja',
   hapticTriggered: false,
 
@@ -146,7 +151,7 @@ const UI = {
       </div>
     `;
 
-    lucide.createIcons();
+    this.createIcons();
 
     // Bind quick edit budget button
     const editBtn = document.getElementById('btn-quick-edit-budget');
@@ -358,7 +363,7 @@ const UI = {
       </button>
     `;
 
-    lucide.createIcons();
+    this.createIcons();
     this.bindBelanjaEvents();
   },
 
@@ -571,7 +576,7 @@ const UI = {
       </div>
     `;
 
-    lucide.createIcons();
+    this.createIcons();
 
     // Bind receipt modal opener
     document.querySelectorAll('.btn-view-receipt').forEach(card => {
@@ -706,7 +711,7 @@ const UI = {
       </div>
     `;
 
-    lucide.createIcons();
+    this.createIcons();
 
     const manageAccBtn = document.getElementById('btn-manage-account-tab');
     if (manageAccBtn) {
@@ -763,7 +768,7 @@ const UI = {
       </div>
     `;
 
-    lucide.createIcons();
+    this.createIcons();
 
     const closeModal = () => {
       modal.classList.add('hidden');
@@ -949,7 +954,7 @@ const UI = {
       </div>
     `;
 
-    lucide.createIcons();
+    this.createIcons();
     this.bindAddItemModalEvents(itemToEdit);
   },
 
@@ -1303,7 +1308,7 @@ const UI = {
       </div>
     `;
 
-    lucide.createIcons();
+    this.createIcons();
 
     // Preset button clicks
     document.querySelectorAll('.btn-budget-preset').forEach(btn => {
@@ -1396,7 +1401,7 @@ const UI = {
       </div>
     `;
 
-    lucide.createIcons();
+    this.createIcons();
 
     document.getElementById('modal-cancel-finish').addEventListener('click', () => {
       modal.classList.add('hidden');
@@ -1471,7 +1476,7 @@ const UI = {
       </div>
     `;
 
-    lucide.createIcons();
+    this.createIcons();
     document.getElementById('modal-close').addEventListener('click', () => {
       modal.classList.add('hidden');
     });
@@ -1575,7 +1580,7 @@ const UI = {
       </div>
     `;
     profileContainer.onclick = () => this.switchTab('akun');
-    if (window.lucide) lucide.createIcons();
+    this.createIcons();
   },
 
   /**
@@ -1765,7 +1770,7 @@ const UI = {
       </div>
     `;
 
-    lucide.createIcons();
+    this.createIcons();
 
     // Bind Close
     document.getElementById('modal-auth-close').addEventListener('click', () => {
@@ -1996,7 +2001,7 @@ const UI = {
     `;
 
     modal.classList.remove('hidden');
-    if (window.lucide) lucide.createIcons();
+    this.createIcons();
     this.bindRealtimeModalEvents(modal);
   },
 
@@ -2310,7 +2315,7 @@ const UI = {
       </div>
     `;
 
-    lucide.createIcons();
+    this.createIcons();
     this.bindAkunEvents();
   },
 
@@ -2626,7 +2631,7 @@ const UI = {
       </div>
     `;
 
-    if (window.lucide) lucide.createIcons();
+    this.createIcons();
     this.bindGatekeeperEvents();
   },
 
@@ -2672,7 +2677,7 @@ const UI = {
         const isPass = passInput.type === 'password';
         passInput.type = isPass ? 'text' : 'password';
         togglePassBtn.innerHTML = `<i data-lucide="${isPass ? 'eye-off' : 'eye'}" class="w-4 h-4"></i>`;
-        if (window.lucide) lucide.createIcons();
+        this.createIcons();
       }
     });
 
@@ -2837,7 +2842,7 @@ const UI = {
       </div>
     `;
 
-    if (window.lucide) lucide.createIcons();
+    this.createIcons();
 
     document.getElementById('btn-close-supabase-modal')?.addEventListener('click', () => {
       modalContainer.className = 'hidden';

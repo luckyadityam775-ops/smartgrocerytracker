@@ -1,68 +1,131 @@
 /**
  * Main Application Orchestrator for Smart Grocery & Budget Safety Tracker
+ * Bulletproof multi-trigger bootloader compatible with Live Server, PWA, and direct file access.
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-  // 1. Initialize auth, realtime & data store
-  if (window.Auth) window.Auth.init();
-  if (window.Realtime) window.Realtime.init();
-  Store.init();
+function bootApp() {
+  if (window.__APP_BOOTED__) return;
+  window.__APP_BOOTED__ = true;
 
-  // 2. Initial UI render
-  UI.render();
+  console.log('[Boot] Initializing Smart Grocery & Budget Safety Tracker...');
 
-  // 3. React to Store & Auth updates automatically
-  Store.onChange(() => {
-    UI.render();
-  });
-  if (window.Auth) {
-    window.Auth.onAuthChange(() => {
-      UI.render();
-      if (window.Realtime && typeof window.Realtime.attachFirestoreSnapshots === 'function') {
-        window.Realtime.attachFirestoreSnapshots();
-      }
-    });
+  // 1. Initialize auth, realtime & data store safely
+  try {
+    if (window.Auth && typeof window.Auth.init === 'function') {
+      window.Auth.init();
+    }
+  } catch (e) {
+    console.error('[Boot] Auth.init error:', e);
   }
 
-  // 3b. React to Realtime onSnapshot updates from other tabs or Cloud Firestore
-  if (Store.onSnapshot) {
-    Store.onSnapshot((snapshot) => {
-      if (snapshot.source !== 'local') {
-        UI.render();
-        const sourceLabel = snapshot.source === 'firestore' ? 'Cloud Firestore' : 'Multi-Tab Realtime';
-        UI.showToast(`⚡ Sinkronisasi ${sourceLabel}: Data diperbarui seketika!`);
-      }
-    });
+  try {
+    if (window.Realtime && typeof window.Realtime.init === 'function') {
+      window.Realtime.init();
+    }
+  } catch (e) {
+    console.error('[Boot] Realtime.init error:', e);
+  }
+
+  try {
+    if (window.Store && typeof window.Store.init === 'function') {
+      window.Store.init();
+    }
+  } catch (e) {
+    console.error('[Boot] Store.init error:', e);
+  }
+
+  // 2. Initial UI render
+  try {
+    if (window.UI && typeof window.UI.render === 'function') {
+      window.UI.render();
+    }
+  } catch (e) {
+    console.error('[Boot] UI.render error:', e);
+  }
+
+  // 3. React to Store & Auth updates automatically
+  try {
+    if (window.Store && typeof window.Store.onChange === 'function') {
+      window.Store.onChange(() => {
+        if (window.UI && typeof window.UI.render === 'function') {
+          window.UI.render();
+        }
+      });
+    }
+
+    if (window.Auth && typeof window.Auth.onAuthChange === 'function') {
+      window.Auth.onAuthChange(() => {
+        if (window.UI && typeof window.UI.render === 'function') {
+          window.UI.render();
+        }
+        if (window.Realtime && typeof window.Realtime.attachFirestoreSnapshots === 'function') {
+          window.Realtime.attachFirestoreSnapshots();
+        }
+      });
+    }
+
+    // 3b. React to Realtime onSnapshot updates from other tabs or Cloud Firestore
+    if (window.Store && typeof window.Store.onSnapshot === 'function') {
+      window.Store.onSnapshot((snapshot) => {
+        if (snapshot.source !== 'local') {
+          if (window.UI && typeof window.UI.render === 'function') {
+            window.UI.render();
+            const sourceLabel = snapshot.source === 'firestore' ? 'Cloud Firestore' : 'Multi-Tab Realtime';
+            if (typeof window.UI.showToast === 'function') {
+              window.UI.showToast(`⚡ Sinkronisasi ${sourceLabel}: Data diperbarui seketika!`);
+            }
+          }
+        }
+      });
+    }
+  } catch (e) {
+    console.warn('[Boot] Error binding store listeners:', e);
   }
 
   // 4. Bind Bottom Navigation Bar
-  document.querySelectorAll('.nav-tab-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const tab = e.currentTarget.getAttribute('data-tab');
-      UI.switchTab(tab);
+  try {
+    document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const tab = e.currentTarget.getAttribute('data-tab');
+        if (window.UI && typeof window.UI.switchTab === 'function') {
+          window.UI.switchTab(tab);
+        }
+      });
     });
-  });
-
-  // 5. Handle URL parameters (e.g. shortcuts or PWA links)
-  const urlParams = new URLSearchParams(window.location.search);
-  const requestedTab = urlParams.get('tab');
-  const requestedAction = urlParams.get('action');
-
-  if (requestedTab && ['belanja', 'riwayat', 'anggaran', 'akun'].includes(requestedTab)) {
-    UI.switchTab(requestedTab);
-  } else {
-    UI.switchTab('belanja');
+  } catch (e) {
+    console.warn('[Boot] Error binding nav bar:', e);
   }
 
-  if (requestedAction === 'quickadd') {
-    setTimeout(() => {
-      UI.openAddItemModal();
-    }, 200);
+  // 5. Handle URL parameters (e.g. shortcuts or PWA links)
+  try {
+    const urlParams = (typeof window !== 'undefined' && window.location) ? new URLSearchParams(window.location.search) : null;
+    const requestedTab = urlParams ? urlParams.get('tab') : null;
+    const requestedAction = urlParams ? urlParams.get('action') : null;
+
+    if (requestedTab && ['belanja', 'riwayat', 'anggaran', 'akun'].includes(requestedTab)) {
+      if (window.UI && typeof window.UI.switchTab === 'function') {
+        window.UI.switchTab(requestedTab);
+      }
+    } else {
+      if (window.UI && typeof window.UI.switchTab === 'function') {
+        window.UI.switchTab('belanja');
+      }
+    }
+
+    if (requestedAction === 'quickadd') {
+      setTimeout(() => {
+        if (window.UI && typeof window.UI.openAddItemModal === 'function') {
+          window.UI.openAddItemModal();
+        }
+      }, 200);
+    }
+  } catch (e) {
+    console.warn('[Boot] Error handling URL params:', e);
   }
 
   // 6. Register Service Worker for PWA
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    try {
       navigator.serviceWorker.register('./sw.js')
         .then((reg) => {
           console.log('[PWA] Service Worker registered with scope:', reg.scope);
@@ -70,39 +133,55 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch((err) => {
           console.warn('[PWA] Service Worker registration failed:', err);
         });
-    });
+    } catch (e) {}
   }
 
   // 7. PWA Install Prompt Handler
-  let deferredPrompt;
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    const installBanner = document.getElementById('pwa-install-banner');
-    if (installBanner) {
-      installBanner.classList.remove('hidden');
-      const btnInstall = document.getElementById('btn-pwa-install');
-      if (btnInstall) {
-        btnInstall.addEventListener('click', () => {
-          installBanner.classList.add('hidden');
-          deferredPrompt.prompt();
-          deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-              console.log('[PWA] User accepted the install prompt');
-            }
-            deferredPrompt = null;
+  if (typeof window !== 'undefined') {
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const installBanner = document.getElementById('pwa-install-banner');
+      if (installBanner) {
+        installBanner.classList.remove('hidden');
+        const btnInstall = document.getElementById('btn-pwa-install');
+        if (btnInstall) {
+          btnInstall.addEventListener('click', () => {
+            installBanner.classList.add('hidden');
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+              if (choiceResult.outcome === 'accepted') {
+                console.log('[PWA] User accepted the install prompt');
+              }
+              deferredPrompt = null;
+            });
           });
-        });
+        }
+        const btnDismiss = document.getElementById('btn-pwa-dismiss');
+        if (btnDismiss) {
+          btnDismiss.addEventListener('click', () => {
+            installBanner.classList.add('hidden');
+          });
+        }
       }
-      const btnDismiss = document.getElementById('btn-pwa-dismiss');
-      if (btnDismiss) {
-        btnDismiss.addEventListener('click', () => {
-          installBanner.classList.add('hidden');
-        });
-      }
-    }
-  });
+    });
+  }
 
-  // 8. Log initial ready status
   console.log('Smart Grocery & Budget Safety Tracker Initialized successfully.');
-});
+}
+
+// Multi-trigger bootloader to guarantee execution across all browsers and Live Server
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootApp);
+  } else {
+    bootApp();
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', bootApp);
+  // Additional safety timeout in case of delayed DOM injection
+  setTimeout(bootApp, 100);
+}
