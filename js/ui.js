@@ -93,9 +93,6 @@ const UI = {
         <div class="flex flex-col items-center justify-center border-x border-slate-800">
           <span class="text-[9px] text-slate-400 uppercase font-semibold">Total Belanja</span>
           <span class="text-[11px] sm:text-xs font-bold text-white truncate max-w-full">${Calculator.formatRupiah(grandTotal)}</span>
-          ${(summary.previousMonthlySpent && summary.previousMonthlySpent > 0 && grandTotal === 0) ? `
-            <span class="text-[8px] text-slate-400 leading-tight">Bulan ini: ${Calculator.formatRupiah(summary.previousMonthlySpent)}</span>
-          ` : ''}
         </div>
         <div class="flex flex-col items-center justify-center">
           <span class="text-[9px] text-slate-400 uppercase font-semibold">${isOverbudget ? 'Kurang (Minus)' : 'Sisa Saldo'}</span>
@@ -262,17 +259,14 @@ const UI = {
 
     let itemsHtml = '';
     if (items.length === 0) {
-      const hasPriorSpent = summary.previousMonthlySpent && summary.previousMonthlySpent > 0;
       itemsHtml = `
         <div class="flex flex-col items-center justify-center py-10 px-4 text-center">
-          <div class="w-16 h-16 rounded-2xl ${hasPriorSpent ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-slate-800/60 border border-slate-700/60 text-slate-500'} flex items-center justify-center mb-3 shadow-inner">
-            <i data-lucide="${hasPriorSpent ? 'check-circle-2' : 'shopping-cart'}" class="w-8 h-8 ${hasPriorSpent ? 'text-emerald-400' : 'text-slate-400'}"></i>
+          <div class="w-16 h-16 rounded-2xl bg-slate-800/60 border border-slate-700/60 text-slate-500 flex items-center justify-center mb-3 shadow-inner">
+            <i data-lucide="shopping-cart" class="w-8 h-8 text-slate-400"></i>
           </div>
-          <h3 class="text-base font-extrabold text-white mb-1">${hasPriorSpent ? 'Troli Baru Siap Belanja' : 'Troli Masih Kosong'}</h3>
+          <h3 class="text-base font-extrabold text-white mb-1">Troli Masih Kosong</h3>
           <p class="text-xs text-slate-400 max-w-xs mb-5">
-            ${hasPriorSpent 
-              ? `Belanja bulan ini tersimpan: <strong class="text-white">${Calculator.formatRupiah(summary.previousMonthlySpent)}</strong>. Sisa saldo dompet yang aman digunakan: <strong class="text-emerald-400 font-bold">${Calculator.formatRupiah(summary.remainingBudget)}</strong>.` 
-              : 'Keranjang belanja masih kosong, silakan tambahkan barang belanja atau muat contoh 5 item belanjaan.'}
+            Keranjang belanja masih kosong, silakan tambahkan barang belanja atau muat contoh 5 item belanjaan.
           </p>
           <div class="flex flex-col gap-2.5 w-full max-w-xs mx-auto">
             <button id="btn-load-benchmark-cart" class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-950/40 touch-scale transition">
@@ -2168,8 +2162,7 @@ const UI = {
     const cart = Store.getActiveCart();
     const budget = Store.getBudgetSettings();
     const discount = Store.getCartDiscount();
-    const monthlyHistorySpent = Store.getMonthlyHistoricalSpent ? Store.getMonthlyHistoricalSpent() : 0;
-    const summary = Calculator.calculateCartSummary(cart, budget.monthlyLimit, discount, monthlyHistorySpent);
+    const summary = Calculator.calculateCartSummary(cart, budget.monthlyLimit, discount);
 
     if (summary.isOverbudget) {
       this.vibrate([100, 60, 100, 60, 150]);
@@ -3927,8 +3920,7 @@ CREATE POLICY "Akses Publik grocery_history" ON public.grocery_history FOR ALL U
     const budget = Store.getBudgetSettings();
     const cart = Store.getActiveCart();
     const discount = Store.getCartDiscount();
-    const monthlyHistorySpent = Store.getMonthlyHistoricalSpent ? Store.getMonthlyHistoricalSpent() : 0;
-    const summary = Calculator.calculateCartSummary(cart, budget.monthlyLimit, discount, monthlyHistorySpent);
+    const summary = Calculator.calculateCartSummary(cart, budget.monthlyLimit, discount);
 
     const currentTab = this.activeTab || 'belanja';
     const budgetHeader = document.getElementById('sticky-budget-header');

@@ -155,17 +155,15 @@ const Calculator = {
     }
     cartSavings = Math.min(totalItemsFinal, Math.max(0, cartSavings));
 
-    // Belanja troli saat ini
+    // Belanja troli sesi saat ini
     const currentCartTotal = Math.max(0, totalItemsFinal - cartSavings);
 
-    // Total pengeluaran bulan ini (akumulasi riwayat belanja selesai + troli saat ini)
-    const totalMonthSpent = currentCartTotal + parsedPrevSpent;
+    // Sisa saldo dompet dihitung dari batas saldo dikurangi belanja troli saat ini
+    // Selesai belanja: saldo direset kembali utuh ke saldo awal (tidak dikurangi riwayat lalu)
+    const remainingBudget = parsedBudget - currentCartTotal;
 
-    // Sisa saldo dompet yang benar-benar tersisa (tetap berkurang sehabis belanja!)
-    const remainingBudget = parsedBudget - totalMonthSpent;
-
-    // Persentase penggunaan anggaran bulan ini
-    const budgetUsagePercent = parsedBudget > 0 ? (totalMonthSpent / parsedBudget) * 100 : (totalMonthSpent > 0 ? 100 : 0);
+    // Persentase penggunaan anggaran sesi belanja saat ini
+    const budgetUsagePercent = parsedBudget > 0 ? (currentCartTotal / parsedBudget) * 100 : 0;
 
     // Safety Cap Status
     let safetyStatus = "safe";
@@ -184,20 +182,10 @@ const Calculator = {
         statusColor = "amber";
       }
     } else {
-      // Troli kosong (0 item): tidak memicu alarm panik "kurangi barang"
-      if (remainingBudget < 0) {
-        safetyStatus = "warning";
-        statusLabel = "Batas saldo dompet bulan ini telah terpakai penuh.";
-        statusColor = "amber";
-      } else if (budgetUsagePercent >= 80) {
-        safetyStatus = "safe";
-        statusLabel = `Troli Kosong (Saldo Terpakai ${Math.round(budgetUsagePercent)}% Bulan Ini)`;
-        statusColor = "emerald";
-      } else {
-        safetyStatus = "safe";
-        statusLabel = "Aman: Belanjaan Terkendali";
-        statusColor = "emerald";
-      }
+      // Troli kosong (0 item): Saldo utuh 100% dan status Aman terkendali
+      safetyStatus = "safe";
+      statusLabel = "Aman: Belanjaan Terkendali";
+      statusColor = "emerald";
     }
 
     return {
@@ -206,11 +194,11 @@ const Calculator = {
       totalOriginal,
       currentCartTotal,
       previousMonthlySpent: parsedPrevSpent,
-      totalMonthSpent,
+      totalMonthSpent: currentCartTotal,
       grandTotal: currentCartTotal, // Belanja troli saat ini (Rp 0 jika kosong)
       allSavings: totalItemSavings + cartSavings,
       budgetLimit: parsedBudget,
-      remainingBudget, // Sisa saldo dompet yang konsisten dan akurat
+      remainingBudget, // Sisa saldo dompet yang kembali utuh ke saldo awal
       budgetUsagePercent: Math.min(100, Math.round(budgetUsagePercent)),
       actualPercent: budgetUsagePercent,
       safetyStatus,
