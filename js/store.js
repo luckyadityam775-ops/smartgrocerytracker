@@ -406,12 +406,12 @@ const Store = {
       id: 'session_' + Date.now(),
       date: dateFormatted,
       monthName: sessionMonthName,
-      totalAmount: cartSummary.grandTotal,
-      totalSavings: cartSummary.allSavings,
-      itemCount: cartSummary.totalItemsCount,
-      budgetLimit: cartSummary.budgetLimit,
-      remainingBudget: cartSummary.remainingBudget,
-      status: cartSummary.remainingBudget >= 0 ? "Selesai (Di Bawah Anggaran)" : "Selesai (Melebihi Anggaran)",
+      totalAmount: (cartSummary && cartSummary.currentCartTotal !== undefined) ? cartSummary.currentCartTotal : (cartSummary ? cartSummary.grandTotal : 0),
+      totalSavings: cartSummary ? cartSummary.allSavings : 0,
+      itemCount: cartSummary ? cartSummary.totalItemsCount : 0,
+      budgetLimit: cartSummary ? cartSummary.budgetLimit : 0,
+      remainingBudget: cartSummary ? cartSummary.remainingBudget : 0,
+      status: (cartSummary && cartSummary.remainingBudget >= 0) ? "Selesai (Di Bawah Anggaran)" : "Selesai (Melebihi Anggaran)",
       notes: notes,
       items: cart.map(item => {
         const row = Calculator.calculateItemRow(item);
@@ -448,6 +448,34 @@ const Store = {
     this.saveCartDiscount({ type: 'none', value: 0 });
 
     return sessionRecord;
+  },
+
+  /**
+   * Calculate total spent in previous archived sessions for the current month
+   * @param {string} yearMonth Optional e.g. "2026-10"
+   */
+  getMonthlyHistoricalSpent(yearMonth = null) {
+    const sessionInfo = this.getSessionInfo ? this.getSessionInfo() : null;
+    const targetDate = sessionInfo && sessionInfo.date ? sessionInfo.date : new Date().toISOString().slice(0, 10);
+    const ym = yearMonth || targetDate.slice(0, 7); // e.g. "2026-10"
+    const history = this.getHistory() || [];
+    let spent = 0;
+    history.forEach(item => {
+      if (item && item.date && item.date.startsWith(ym)) {
+        spent += (Number(item.totalAmount) || 0);
+      }
+    });
+    return spent;
+  },
+
+  /**
+   * Delete an archived history session record and notify UI
+   */
+  deleteHistoryRecord(sessionId) {
+    const history = this.getHistory();
+    const updated = history.filter(h => h.id !== sessionId);
+    this.saveHistory(updated);
+    return updated;
   },
 
   getCategoryBreakdown(items) {

@@ -128,8 +128,9 @@ const Calculator = {
    * @param {number} budgetLimit Batas saldo dompet
    * @param {object} cartDiscount Voucher / diskon keranjang
    */
-  calculateCartSummary(items = [], budgetLimit = 500000, cartDiscount = { type: 'none', value: 0 }) {
+  calculateCartSummary(items = [], budgetLimit = 500000, cartDiscount = { type: 'none', value: 0 }, previousMonthlySpent = 0) {
     const parsedBudget = Math.max(0, this.parseNumber(budgetLimit));
+    const parsedPrevSpent = Math.max(0, this.parseNumber(previousMonthlySpent));
     let totalItemsCount = 0;
     let totalOriginal = 0;
     let totalItemsFinal = 0;
@@ -153,7 +154,8 @@ const Calculator = {
     }
     cartSavings = Math.min(totalItemsFinal, Math.max(0, cartSavings));
 
-    const grandTotal = Math.max(0, totalItemsFinal - cartSavings);
+    const currentCartTotal = Math.max(0, totalItemsFinal - cartSavings);
+    const grandTotal = currentCartTotal + parsedPrevSpent;
     const allSavings = totalItemSavings + cartSavings;
     const remainingBudget = parsedBudget - grandTotal;
     const budgetUsagePercent = parsedBudget > 0 ? (grandTotal / parsedBudget) * 100 : (grandTotal > 0 ? 100 : 0);
@@ -180,6 +182,8 @@ const Calculator = {
       items: processedItems,
       totalItemsCount,
       totalOriginal,
+      currentCartTotal,
+      previousMonthlySpent: parsedPrevSpent,
       grandTotal,
       allSavings,
       budgetLimit: parsedBudget,
