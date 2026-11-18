@@ -102,7 +102,7 @@ function bootApp() {
     const requestedTab = urlParams ? urlParams.get('tab') : null;
     const requestedAction = urlParams ? urlParams.get('action') : null;
 
-    if (requestedTab && ['belanja', 'riwayat', 'anggaran', 'akun'].includes(requestedTab)) {
+    if (requestedTab && ['belanja', 'rencana', 'riwayat', 'anggaran'].includes(requestedTab)) {
       if (window.UI && typeof window.UI.switchTab === 'function') {
         window.UI.switchTab(requestedTab);
       }
@@ -136,37 +136,8 @@ function bootApp() {
     } catch (e) {}
   }
 
-  // 7. PWA Install Prompt Handler
-  if (typeof window !== 'undefined') {
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      const installBanner = document.getElementById('pwa-install-banner');
-      if (installBanner) {
-        installBanner.classList.remove('hidden');
-        const btnInstall = document.getElementById('btn-pwa-install');
-        if (btnInstall) {
-          btnInstall.addEventListener('click', () => {
-            installBanner.classList.add('hidden');
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then((choiceResult) => {
-              if (choiceResult.outcome === 'accepted') {
-                console.log('[PWA] User accepted the install prompt');
-              }
-              deferredPrompt = null;
-            });
-          });
-        }
-        const btnDismiss = document.getElementById('btn-pwa-dismiss');
-        if (btnDismiss) {
-          btnDismiss.addEventListener('click', () => {
-            installBanner.classList.add('hidden');
-          });
-        }
-      }
-    });
-  }
+  // PWA ready
+  console.log('[PWA] GrocerySafe app initialized.');
 
   console.log('Smart Grocery & Budget Safety Tracker Initialized successfully.');
 }

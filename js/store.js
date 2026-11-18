@@ -356,6 +356,76 @@ const Store = {
     return Object.values(breakdown).sort((a, b) => b.total - a.total);
   },
 
+  // ------------------ RENCANA PEMBELIAN (SHOPPING PLAN) ------------------
+  getPlannedItems() {
+    try {
+      const data = localStorage.getItem(this.getKey('planned_items'));
+      if (data) return JSON.parse(data);
+      // Default sample items for shopping plan
+      const defaultPlan = [
+        { id: 'plan_1', name: 'Susu UHT Full Cream 1L', category: 'Bahan Pokok', unit: 'kotak', qty: 2, estimatedPrice: 21000, priority: 'Tinggi', notes: 'Kebutuhan sarapan' },
+        { id: 'plan_2', name: 'Kecap Manis 550ml', category: 'Dapur & Bumbu', unit: 'pouch', qty: 1, estimatedPrice: 18500, priority: 'Sedang', notes: 'Stok dapur menipis' },
+        { id: 'plan_3', name: 'Pasta Gigi Herbal', category: 'Toiletries', unit: 'pcs', qty: 1, estimatedPrice: 16000, priority: 'Rendah', notes: 'Cari promo toko' }
+      ];
+      this.savePlannedItems(defaultPlan);
+      return defaultPlan;
+    } catch (e) {
+      return [];
+    }
+  },
+
+  savePlannedItems(items) {
+    localStorage.setItem(this.getKey('planned_items'), JSON.stringify(items));
+    this.notifyChange('planned_items');
+  },
+
+  addPlannedItem(item) {
+    if (!item || !item.name || !item.name.trim()) return null;
+    const estPrice = parseFloat(item.estimatedPrice) || 0;
+    const qty = Math.max(1, parseInt(item.qty, 10) || 1);
+    const planList = this.getPlannedItems();
+    const newItem = {
+      id: 'plan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      name: item.name.trim(),
+      category: item.category || 'Bahan Pokok',
+      unit: item.unit || 'pcs',
+      qty: qty,
+      estimatedPrice: estPrice,
+      priority: item.priority || 'Sedang',
+      notes: (item.notes || '').trim(),
+      createdAt: new Date().toISOString()
+    };
+    planList.unshift(newItem);
+    this.savePlannedItems(planList);
+    return newItem;
+  },
+
+  removePlannedItem(id) {
+    const planList = this.getPlannedItems();
+    const filtered = planList.filter(item => item.id !== id);
+    this.savePlannedItems(filtered);
+  },
+
+  movePlanToCart(id) {
+    const planList = this.getPlannedItems();
+    const item = planList.find(p => p.id === id);
+    if (!item) return null;
+
+    // Add to active cart
+    const addedCartItem = this.addCartItem({
+      name: item.name,
+      category: item.category,
+      unit: item.unit,
+      qty: item.qty,
+      currentPrice: item.estimatedPrice > 0 ? item.estimatedPrice : 10000,
+      lastPrice: item.estimatedPrice > 0 ? item.estimatedPrice : 10000
+    });
+
+    // Remove from planned list
+    this.removePlannedItem(id);
+    return addedCartItem;
+  },
+
   // ------------------ REALTIME & ON_SNAPSHOT EVENTS ------------------
   listeners: [],
   onChange(fn) {

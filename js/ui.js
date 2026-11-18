@@ -1519,7 +1519,7 @@ const UI = {
     });
 
     // Toggle content views
-    ['belanja', 'riwayat', 'anggaran', 'akun'].forEach(id => {
+    ['belanja', 'rencana', 'riwayat', 'anggaran'].forEach(id => {
       const el = document.getElementById(`tab-content-${id}`);
       if (el) {
         if (id === tabId) {
@@ -1564,22 +1564,38 @@ const UI = {
           <span>Masuk</span>
         </button>
       `;
-      profileContainer.onclick = () => this.switchTab('akun');
+      profileContainer.onclick = () => {
+        window.Auth.logout();
+        this.render();
+      };
       return;
     }
 
     profileContainer.innerHTML = `
-      <div class="flex items-center gap-1.5 cursor-pointer touch-scale p-1 rounded-xl hover:bg-slate-800 transition">
+      <div class="flex items-center gap-1.5 cursor-pointer touch-scale p-1 rounded-xl hover:bg-slate-800 transition" title="Klik untuk Keluar (Log Out)">
         <div class="text-right">
           <span class="text-xs font-bold text-white block leading-none truncate max-w-[70px] sm:max-w-[100px]">${user.name}</span>
-          <span class="text-[9px] text-emerald-400 font-semibold hidden sm:block">${user.role || 'Pengguna'}</span>
+          <span class="text-[9px] text-slate-400 font-medium">Keluar</span>
         </div>
         <div class="w-7 h-7 rounded-full ${user.avatarBg || 'bg-emerald-600'} text-white font-extrabold flex items-center justify-center text-xs shadow-md border border-white/20 shrink-0">
           ${user.avatarLetter || user.name.charAt(0).toUpperCase()}
         </div>
       </div>
     `;
-    profileContainer.onclick = () => this.switchTab('akun');
+    profileContainer.onclick = () => {
+      this.openConfirmModal({
+        title: 'Konfirmasi Keluar',
+        message: `Anda sedang masuk sebagai ${user.fullName || user.name || user.email}. Apakah Anda ingin keluar (log out) dari aplikasi?`,
+        confirmText: 'Ya, Keluar',
+        cancelText: 'Batal',
+        onConfirm: () => {
+          window.Auth.logout();
+          this.vibrate(40);
+          this.showToast('Berhasil keluar dari akun.');
+          this.render();
+        }
+      });
+    };
     if (window.lucide) lucide.createIcons();
   },
 

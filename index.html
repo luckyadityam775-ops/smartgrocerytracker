@@ -62,18 +62,6 @@
 
     <!-- Main App Shell (Visible when user is logged in) -->
     <div id="main-app-shell" class="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
-      <!-- Top PWA Install Banner (Optional prompt) -->
-      <div id="pwa-install-banner" class="shrink-0 hidden bg-emerald-950/80 border-b border-emerald-500/30 px-3.5 py-2 text-xs flex items-center justify-between text-emerald-200">
-        <div class="flex items-center gap-2">
-          <i data-lucide="smartphone" class="w-4 h-4 text-emerald-400"></i>
-          <span>Pasang aplikasi di layar utama HP?</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <button id="btn-pwa-install" class="px-2.5 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[10px] touch-scale">Install</button>
-          <button id="btn-pwa-dismiss" class="p-1 text-slate-400 hover:text-white"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
-        </div>
-      </div>
-
       <!-- App Brand Top Bar -->
       <header class="shrink-0 px-4 pt-3 pb-2 flex items-center justify-between bg-slate-900 border-b border-slate-800/60">
         <div class="flex items-center gap-2">
@@ -112,19 +100,19 @@
           <!-- Rendered by UI.renderBelanjaTab() -->
         </section>
 
-        <!-- Tab 2: Riwayat (Catatan Belanja & Trend Pengeluaran) [F-06] -->
+        <!-- Tab 2: Rencana Pembelian (Wishlist & Planning Kebutuhan Belanja) -->
+        <section id="tab-content-rencana" class="w-full hidden">
+          <!-- Rendered by UI.renderRencanaTab() -->
+        </section>
+
+        <!-- Tab 3: Riwayat (Catatan Belanja & Trend Pengeluaran) [F-06] -->
         <section id="tab-content-riwayat" class="w-full hidden">
           <!-- Rendered by UI.renderRiwayatTab() -->
         </section>
 
-        <!-- Tab 3: Anggaran (Pengaturan Saldo & Ringkasan Kategori) -->
+        <!-- Tab 4: Anggaran (Pengaturan Saldo & Ringkasan Kategori) -->
         <section id="tab-content-anggaran" class="w-full hidden">
           <!-- Rendered by UI.renderAnggaranTab() -->
-        </section>
-
-        <!-- Tab 4: Akun (Kelola & Ganti Akun Pengguna) -->
-        <section id="tab-content-akun" class="w-full hidden">
-          <!-- Rendered by UI.renderAkunTab() -->
         </section>
       </main>
 
@@ -141,7 +129,15 @@
               <span class="nav-text text-[11px] mt-0.5 font-bold tracking-tight">Belanja</span>
             </button>
 
-            <!-- Tab 2: Riwayat -->
+            <!-- Tab 2: Rencana Pembelian (Persis di sebelah Belanja) -->
+            <button class="nav-tab-btn flex-1 min-h-[48px] py-1.5 flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 touch-scale transition-colors touch-target-44" data-tab="rencana">
+              <span class="nav-icon-wrapper p-1 rounded-xl text-slate-400 transition-all">
+                <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+              </span>
+              <span class="nav-text text-[11px] mt-0.5 tracking-tight">Rencana</span>
+            </button>
+
+            <!-- Tab 3: Riwayat -->
             <button class="nav-tab-btn flex-1 min-h-[48px] py-1.5 flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 touch-scale transition-colors touch-target-44" data-tab="riwayat">
               <span class="nav-icon-wrapper p-1 rounded-xl text-slate-400 transition-all">
                 <i data-lucide="history" class="w-5 h-5"></i>
@@ -149,20 +145,12 @@
               <span class="nav-text text-[11px] mt-0.5 tracking-tight">Riwayat</span>
             </button>
 
-            <!-- Tab 3: Anggaran -->
+            <!-- Tab 4: Anggaran -->
             <button class="nav-tab-btn flex-1 min-h-[48px] py-1.5 flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 touch-scale transition-colors touch-target-44" data-tab="anggaran">
               <span class="nav-icon-wrapper p-1 rounded-xl text-slate-400 transition-all">
                 <i data-lucide="wallet" class="w-5 h-5"></i>
               </span>
               <span class="nav-text text-[11px] mt-0.5 tracking-tight">Anggaran</span>
-            </button>
-
-            <!-- Tab 4: Akun -->
-            <button class="nav-tab-btn flex-1 min-h-[48px] py-1.5 flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 touch-scale transition-colors touch-target-44" data-tab="akun">
-              <span class="nav-icon-wrapper p-1 rounded-xl text-slate-400 transition-all">
-                <i data-lucide="user" class="w-5 h-5"></i>
-              </span>
-              <span class="nav-text text-[11px] mt-0.5 tracking-tight">Akun</span>
             </button>
 
           </div>
