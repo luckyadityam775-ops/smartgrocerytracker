@@ -91,9 +91,9 @@ const Store = {
       const data = localStorage.getItem(this.getKey('budget'));
       if (data) return JSON.parse(data);
       const user = window.Auth ? window.Auth.getCurrentUser() : null;
-      return { monthlyLimit: 500000, emergencyReserve: 50000, userName: user ? user.fullName : "Rian (Anak Rantau)" };
+      return { monthlyLimit: 500000, emergencyReserve: 50000, userName: user ? user.fullName : "Pengguna Utama" };
     } catch (e) {
-      return { monthlyLimit: 500000, emergencyReserve: 50000, userName: "Rian (Anak Rantau)" };
+      return { monthlyLimit: 500000, emergencyReserve: 50000, userName: "Pengguna Utama" };
     }
   },
 

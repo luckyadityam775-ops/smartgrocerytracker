@@ -151,7 +151,7 @@ const UI = {
       </div>
     `;
 
-    this.createIcons();
+    lucide.createIcons();
 
     // Bind quick edit budget button
     const editBtn = document.getElementById('btn-quick-edit-budget');
@@ -278,9 +278,9 @@ const UI = {
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-1.5 text-xs font-bold text-slate-200">
               <i data-lucide="store" class="w-4 h-4 text-emerald-400"></i>
-              <span>Sesi Belanja Aktif (SRS F-01)</span>
+              <span>Sesi Belanja Aktif</span>
             </div>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Lotte Mart Puri Indah</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Supermarket</span>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
@@ -363,7 +363,7 @@ const UI = {
       </button>
     `;
 
-    this.createIcons();
+    lucide.createIcons();
     this.bindBelanjaEvents();
   },
 
@@ -576,7 +576,7 @@ const UI = {
       </div>
     `;
 
-    this.createIcons();
+    lucide.createIcons();
 
     // Bind receipt modal opener
     document.querySelectorAll('.btn-view-receipt').forEach(card => {
@@ -638,11 +638,11 @@ const UI = {
           </div>
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-2xl ${currentUser?.avatarBg || 'bg-emerald-600'} text-white font-extrabold flex items-center justify-center text-sm shadow-md border border-white/20">
-              ${currentUser?.avatarLetter || 'R'}
+              ${currentUser?.avatarLetter || 'P'}
             </div>
             <div>
-              <h4 class="text-sm font-extrabold text-white leading-tight">${currentUser?.fullName || 'Rian (Anak Rantau)'}</h4>
-              <p class="text-xs text-slate-400">${currentUser?.email || 'rian@kost.id'}</p>
+              <h4 class="text-sm font-extrabold text-white leading-tight">${currentUser?.fullName || 'Pengguna Utama'}</h4>
+              <p class="text-xs text-slate-400">${currentUser?.email || 'user@grocerysafe.id'}</p>
             </div>
           </div>
         </div>
@@ -711,7 +711,7 @@ const UI = {
       </div>
     `;
 
-    this.createIcons();
+    lucide.createIcons();
 
     const manageAccBtn = document.getElementById('btn-manage-account-tab');
     if (manageAccBtn) {
@@ -768,7 +768,7 @@ const UI = {
       </div>
     `;
 
-    this.createIcons();
+    lucide.createIcons();
 
     const closeModal = () => {
       modal.classList.add('hidden');
@@ -954,7 +954,7 @@ const UI = {
       </div>
     `;
 
-    this.createIcons();
+    lucide.createIcons();
     this.bindAddItemModalEvents(itemToEdit);
   },
 
@@ -1268,7 +1268,7 @@ const UI = {
               </span>
               <div>
                 <h3 class="text-base font-bold text-white">Atur Batas Anggaran</h3>
-                <p class="text-[11px] text-slate-400">Pengendali Safety Cap Saldo Belanja (SRS F-05)</p>
+                <p class="text-[11px] text-slate-400">Pengendali Batas Anggaran Belanja</p>
               </div>
             </div>
             <button id="modal-close" class="p-2 rounded-full text-slate-400 hover:text-white bg-slate-800 touch-scale touch-target-44" aria-label="Tutup Modal">
@@ -1282,12 +1282,12 @@ const UI = {
               <input type="number" inputmode="numeric" id="input-budget-limit" required value="${currentSettings.monthlyLimit}" min="10000" step="5000" 
                 class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-base font-bold text-white focus:outline-none focus:border-emerald-500">
               
-              <!-- Quick Budget Presets for DT2 Testing -->
+              <!-- Quick Budget Presets -->
               <div class="flex items-center gap-1.5 flex-wrap pt-2">
-                <span class="text-[10px] text-slate-400 font-medium">Uji Cepat:</span>
-                <button type="button" class="btn-budget-preset px-2 py-1 rounded-lg bg-slate-800 hover:bg-emerald-600 text-[10px] font-bold text-emerald-300 hover:text-white border border-slate-700 touch-scale" data-val="100000">Rp 100.000 (Uji DT2)</button>
-                <button type="button" class="btn-budget-preset px-2 py-1 rounded-lg bg-slate-800 hover:bg-emerald-600 text-[10px] font-bold text-emerald-300 hover:text-white border border-slate-700 touch-scale" data-val="150000">Rp 150.000 (Uji F5)</button>
-                <button type="button" class="btn-budget-preset px-2 py-1 rounded-lg bg-slate-800 hover:bg-emerald-600 text-[10px] font-bold text-emerald-300 hover:text-white border border-slate-700 touch-scale" data-val="350000">Rp 350.000 (Rian)</button>
+                <span class="text-[10px] text-slate-400 font-medium">Pilihan Cepat:</span>
+                <button type="button" class="btn-budget-preset px-2 py-1 rounded-lg bg-slate-800 hover:bg-emerald-600 text-[10px] font-bold text-emerald-300 hover:text-white border border-slate-700 touch-scale" data-val="100000">Rp 100.000</button>
+                <button type="button" class="btn-budget-preset px-2 py-1 rounded-lg bg-slate-800 hover:bg-emerald-600 text-[10px] font-bold text-emerald-300 hover:text-white border border-slate-700 touch-scale" data-val="150000">Rp 150.000</button>
+                <button type="button" class="btn-budget-preset px-2 py-1 rounded-lg bg-slate-800 hover:bg-emerald-600 text-[10px] font-bold text-emerald-300 hover:text-white border border-slate-700 touch-scale" data-val="350000">Rp 350.000</button>
                 <button type="button" class="btn-budget-preset px-2 py-1 rounded-lg bg-slate-800 hover:bg-emerald-600 text-[10px] font-bold text-emerald-300 hover:text-white border border-slate-700 touch-scale" data-val="500000">Rp 500.000</button>
               </div>
             </div>
@@ -1308,7 +1308,7 @@ const UI = {
       </div>
     `;
 
-    this.createIcons();
+    lucide.createIcons();
 
     // Preset button clicks
     document.querySelectorAll('.btn-budget-preset').forEach(btn => {
@@ -1401,7 +1401,7 @@ const UI = {
       </div>
     `;
 
-    this.createIcons();
+    lucide.createIcons();
 
     document.getElementById('modal-cancel-finish').addEventListener('click', () => {
       modal.classList.add('hidden');
@@ -1476,7 +1476,7 @@ const UI = {
       </div>
     `;
 
-    this.createIcons();
+    lucide.createIcons();
     document.getElementById('modal-close').addEventListener('click', () => {
       modal.classList.add('hidden');
     });
@@ -1547,7 +1547,7 @@ const UI = {
       const status = window.Realtime.getStatus();
       if (status.isFirestoreActive) {
         realtimeBadge.className = 'flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-400 border border-sky-500/30 touch-scale transition-all';
-        if (realtimeText) realtimeText.textContent = 'CLOUD';
+        if (realtimeText) realtimeText.textContent = 'ONLINE';
       } else {
         realtimeBadge.className = 'flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 touch-scale transition-all';
         if (realtimeText) realtimeText.textContent = 'LIVE';
@@ -1580,7 +1580,7 @@ const UI = {
       </div>
     `;
     profileContainer.onclick = () => this.switchTab('akun');
-    this.createIcons();
+    if (window.lucide) lucide.createIcons();
   },
 
   /**
@@ -1744,14 +1744,14 @@ const UI = {
               <div class="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 mb-2">
                 <span class="text-[10px] text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">Isi Cepat Akun Demo:</span>
                 <div class="flex items-center gap-1.5">
-                  <button type="button" class="btn-quick-fill-auth flex-1 py-1.5 px-2 rounded-lg bg-slate-800 text-[11px] text-emerald-400 font-bold border border-slate-700 hover:bg-slate-700 touch-scale" data-email="rian@kost.id">Rian (123)</button>
-                  <button type="button" class="btn-quick-fill-auth flex-1 py-1.5 px-2 rounded-lg bg-slate-800 text-[11px] text-indigo-400 font-bold border border-slate-700 hover:bg-slate-700 touch-scale" data-email="aditya@kampus.id">Aditya (123)</button>
+                  <button type="button" class="btn-quick-fill-auth flex-1 py-1.5 px-2 rounded-lg bg-slate-800 text-[11px] text-emerald-400 font-bold border border-slate-700 hover:bg-slate-700 touch-scale" data-email="user@grocerysafe.id">Akun Utama (123)</button>
+                  <button type="button" class="btn-quick-fill-auth flex-1 py-1.5 px-2 rounded-lg bg-slate-800 text-[11px] text-indigo-400 font-bold border border-slate-700 hover:bg-slate-700 touch-scale" data-email="aditya@kampus.id">Akun Sekunder (123)</button>
                 </div>
               </div>
 
               <div>
                 <label class="block text-[11px] font-semibold text-slate-300 mb-1">Email atau Nama Pengguna *</label>
-                <input type="text" id="login-identifier" required placeholder="rian@kost.id atau aditya@kampus.id" 
+                <input type="text" id="login-identifier" required placeholder="user@grocerysafe.id atau nama akun" 
                   class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
               </div>
 
@@ -1770,7 +1770,7 @@ const UI = {
       </div>
     `;
 
-    this.createIcons();
+    lucide.createIcons();
 
     // Bind Close
     document.getElementById('modal-auth-close').addEventListener('click', () => {
@@ -1893,7 +1893,7 @@ const UI = {
               </div>
               <div>
                 <h3 class="text-sm font-extrabold text-white">Realtime & onSnapshot</h3>
-                <p class="text-[10px] text-slate-400">Sinkronisasi Instan Antar-Layar & Cloud</p>
+                <p class="text-[10px] text-slate-400">Sinkronisasi Instan Multi-Perangkat</p>
               </div>
             </div>
             <button id="modal-realtime-close" class="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-slate-800">
@@ -1921,12 +1921,12 @@ const UI = {
             </button>
           </div>
 
-          <!-- Section 2: Cloud Firestore onSnapshot -->
+          <!-- Section 2: Realtime Database Sync onSnapshot -->
           <div class="mt-4 p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/50">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <i data-lucide="cloud" class="w-4 h-4 ${status.isFirestoreActive ? 'text-sky-400' : 'text-slate-400'}"></i>
-                <span class="text-xs font-bold text-white">Google Cloud Firestore</span>
+                <i data-lucide="database" class="w-4 h-4 ${status.isFirestoreActive ? 'text-sky-400' : 'text-slate-400'}"></i>
+                <span class="text-xs font-bold text-white">Database Realtime Sync</span>
               </div>
               <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${status.isFirestoreActive ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30' : 'bg-slate-700 text-slate-300'}">
                 ${status.isFirestoreActive ? 'TERHUBUNG' : 'MODE LOKAL'}
@@ -1978,7 +1978,7 @@ const UI = {
 
               <div class="flex items-center gap-2 pt-2">
                 <button type="submit" class="flex-1 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-lg shadow-sky-900/30 touch-scale transition">
-                  ${status.isFirestoreActive ? 'Perbarui Konfigurasi' : 'Hubungkan Cloud Firestore'}
+                  ${status.isFirestoreActive ? 'Perbarui Konfigurasi' : 'Hubungkan Database Realtime'}
                 </button>
                 ${status.isFirestoreActive ? `
                   <button type="button" id="btn-disconnect-firestore" class="px-3 py-2 rounded-xl bg-rose-600/20 text-rose-300 border border-rose-500/30 font-bold text-xs hover:bg-rose-600/30 touch-scale transition">
@@ -2001,7 +2001,7 @@ const UI = {
     `;
 
     modal.classList.remove('hidden');
-    this.createIcons();
+    if (window.lucide) lucide.createIcons();
     this.bindRealtimeModalEvents(modal);
   },
 
@@ -2086,7 +2086,7 @@ const UI = {
           const success = window.Realtime.saveFirebaseConfig(config);
           if (success) {
             this.vibrate([50, 100]);
-            this.showToast('🔥 Berhasil terhubung ke Cloud Firestore Realtime onSnapshot!');
+            this.showToast('🔥 Berhasil terhubung ke Database Realtime onSnapshot!');
             closeModal();
             this.render();
           } else {
@@ -2245,12 +2245,12 @@ const UI = {
             <span class="text-[10px] font-bold text-slate-400 block mb-2 uppercase tracking-wider">Coba Akun Demo Cepat:</span>
             <div class="grid grid-cols-2 gap-2">
               <button type="button" class="btn-demo-quick-login py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-left border border-slate-700 touch-scale transition" data-user="rian">
-                <span class="text-xs font-bold text-white block">👤 Rian</span>
-                <span class="text-[9px] text-emerald-400">Siswa Rantau (500rb)</span>
+                <span class="text-xs font-bold text-white block">👤 Akun Utama</span>
+                <span class="text-[9px] text-emerald-400">Saldo Rp 500.000</span>
               </button>
               <button type="button" class="btn-demo-quick-login py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-left border border-slate-700 touch-scale transition" data-user="aditya">
-                <span class="text-xs font-bold text-white block">👤 Aditya</span>
-                <span class="text-[9px] text-indigo-400">Mahasiswa (750rb)</span>
+                <span class="text-xs font-bold text-white block">👤 Akun Sekunder</span>
+                <span class="text-[9px] text-indigo-400">Saldo Rp 750.000</span>
               </button>
             </div>
           </div>
@@ -2259,7 +2259,7 @@ const UI = {
           <form id="form-tab-login" class="space-y-3">
             <div>
               <label class="block text-[11px] font-semibold text-slate-300 mb-1">Email atau Nama Akun *</label>
-              <input type="text" id="tab-login-identifier" required placeholder="Contoh: rian@kost.id atau Rian" 
+              <input type="text" id="tab-login-identifier" required placeholder="Contoh: user@grocerysafe.id atau nama akun" 
                 class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
             </div>
 
@@ -2315,7 +2315,7 @@ const UI = {
       </div>
     `;
 
-    this.createIcons();
+    lucide.createIcons();
     this.bindAkunEvents();
   },
 
@@ -2344,12 +2344,12 @@ const UI = {
         if (userType === 'rian') {
           window.Auth.switchAccount('user_rian');
           this.vibrate(40);
-          this.showToast('Masuk sebagai Rian (Anak Rantau)');
+          this.showToast('Masuk sebagai Akun Utama');
           this.render();
         } else if (userType === 'aditya') {
           window.Auth.switchAccount('user_aditya');
           this.vibrate(40);
-          this.showToast('Masuk sebagai Aditya (Mahasiswa)');
+          this.showToast('Masuk sebagai Akun Sekunder');
           this.render();
         }
       });
@@ -2449,8 +2449,8 @@ const UI = {
         <div>
           <div class="text-center mb-5">
             <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold mb-3 shadow-sm">
-              <i data-lucide="school" class="w-3.5 h-3.5"></i>
-              <span>SMA Mutiara Bangsa 2 • Evaluasi DT2</span>
+              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+              <span>Smart Grocery & Budget Tracker</span>
             </div>
             
             <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-xl shadow-emerald-950/60 mb-2.5">
@@ -2490,7 +2490,7 @@ const UI = {
                   <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <i data-lucide="mail" class="w-4 h-4"></i>
                   </div>
-                  <input type="text" id="gatekeeper-login-id" required placeholder="Contoh: rian@kost.id atau Rian" 
+                  <input type="text" id="gatekeeper-login-id" required placeholder="Contoh: user@grocerysafe.id atau email Anda" 
                     class="w-full bg-slate-800/90 border border-slate-700 rounded-2xl pl-10 pr-3.5 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition">
                 </div>
               </div>
@@ -2605,24 +2605,24 @@ const UI = {
           </div>
         </div>
 
-        <!-- LAB DT2 QUICK DEMO ACCESS (Bottom Footer Card) -->
+        <!-- QUICK DEMO ACCESS (Bottom Footer Card) -->
         <div class="mt-4 pt-3 border-t border-slate-800/80">
           <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3">
             <div class="flex items-center justify-between mb-2">
               <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1.5">
-                <i data-lucide="flask-conical" class="w-3.5 h-3.5 text-emerald-400"></i>
-                <span>Akses Pengujian Lab DT2 (1-Tap):</span>
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>Akses Akun Demo (1-Tap):</span>
               </span>
-              <span class="text-[9px] text-emerald-400 font-mono font-bold">Lotte Mart Ready</span>
+              <span class="text-[9px] text-emerald-400 font-mono font-bold">Siap Pakai</span>
             </div>
             <div class="grid grid-cols-2 gap-2">
               <button type="button" class="btn-gatekeeper-quick-demo py-2 px-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-left border border-slate-700/80 touch-scale transition" data-user="user_rian">
-                <span class="text-xs font-bold text-white block">👤 Rian (DT2)</span>
-                <span class="text-[9px] text-emerald-400">Lotte Mart • 500rb</span>
+                <span class="text-xs font-bold text-white block">👤 Akun Utama</span>
+                <span class="text-[9px] text-emerald-400">Saldo Rp 500.000</span>
               </button>
               <button type="button" class="btn-gatekeeper-quick-demo py-2 px-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-left border border-slate-700/80 touch-scale transition" data-user="user_aditya">
-                <span class="text-xs font-bold text-white block">👤 Aditya</span>
-                <span class="text-[9px] text-indigo-400">Mahasiswa • 750rb</span>
+                <span class="text-xs font-bold text-white block">👤 Akun Sekunder</span>
+                <span class="text-[9px] text-indigo-400">Saldo Rp 750.000</span>
               </button>
             </div>
           </div>
@@ -2631,7 +2631,7 @@ const UI = {
       </div>
     `;
 
-    this.createIcons();
+    if (window.lucide) lucide.createIcons();
     this.bindGatekeeperEvents();
   },
 
@@ -2677,7 +2677,7 @@ const UI = {
         const isPass = passInput.type === 'password';
         passInput.type = isPass ? 'text' : 'password';
         togglePassBtn.innerHTML = `<i data-lucide="${isPass ? 'eye-off' : 'eye'}" class="w-4 h-4"></i>`;
-        this.createIcons();
+        if (window.lucide) lucide.createIcons();
       }
     });
 
@@ -2762,7 +2762,7 @@ const UI = {
         if (success) {
           const user = window.Auth.getCurrentUser();
           this.vibrate(40);
-          this.showToast(`Masuk sebagai ${user.name} (Evaluasi Lab DT2)`);
+          this.showToast(`Masuk sebagai ${user.name}`);
           this.render();
         }
       });
@@ -2842,7 +2842,7 @@ const UI = {
       </div>
     `;
 
-    this.createIcons();
+    if (window.lucide) lucide.createIcons();
 
     document.getElementById('btn-close-supabase-modal')?.addEventListener('click', () => {
       modalContainer.className = 'hidden';

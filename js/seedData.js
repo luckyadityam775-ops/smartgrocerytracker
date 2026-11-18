@@ -8,27 +8,27 @@ const SEED_DATA = {
   users: [
     {
       id: "user_rian",
-      name: "Rian",
-      fullName: "Rian (Anak Rantau)",
-      email: "rian@kost.id",
+      name: "Pengguna",
+      fullName: "Pengguna Utama",
+      email: "user@grocerysafe.id",
       password: "123",
-      role: "Siswa Rantau",
+      role: "Pengguna",
       avatarBg: "bg-emerald-600",
-      avatarLetter: "R"
+      avatarLetter: "P"
     },
     {
       id: "user_aditya",
       name: "Aditya",
-      fullName: "Aditya (Mahasiswa Teknik)",
-      email: "aditya@kampus.id",
+      fullName: "Aditya Pratama",
+      email: "aditya@grocerysafe.id",
       password: "123",
-      role: "Mahasiswa Tingkat Akhir",
+      role: "Pengguna",
       avatarBg: "bg-indigo-600",
       avatarLetter: "A"
     }
   ],
 
-  // Data for User 1: Rian (Budget Rp 500.000, sembako & toiletries)
+  // Data for User 1: (Budget Rp 500.000, sembako & toiletries)
   userData_user_rian: {
     sessionInfo: {
       storeName: "Lotte Mart Grocery - Puri Indah",
@@ -37,7 +37,7 @@ const SEED_DATA = {
     budgetSettings: {
       monthlyLimit: 500000,
       emergencyReserve: 50000,
-      userName: "Rian (Anak Rantau)"
+      userName: "Pengguna Utama"
     },
     cartDiscount: { type: 'none', value: 0 },
     catalog: [
