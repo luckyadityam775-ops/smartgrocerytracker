@@ -481,6 +481,323 @@ const UI = {
   },
 
   /**
+   * Render Tab: Rencana Pembelian (Shopping Wishlist & Planning)
+   */
+  renderRencanaTab(summary) {
+    const container = document.getElementById('tab-content-rencana');
+    if (!container) return;
+
+    const plannedItems = Store.getPlannedItems ? Store.getPlannedItems() : [];
+    const budget = Store.getBudgetSettings();
+    const currentSpent = summary ? summary.totalSpent : 0;
+    const remainingBudget = Math.max(0, budget.monthlyLimit - currentSpent);
+
+    const totalEstimated = plannedItems.reduce((acc, p) => acc + ((p.qty || 1) * (p.estimatedPrice || 0)), 0);
+    const isBudgetSufficient = totalEstimated <= remainingBudget;
+
+    let itemsHtml = '';
+    if (plannedItems.length === 0) {
+      itemsHtml = `
+        <div class="glass-card rounded-2xl p-8 text-center border border-slate-800">
+          <div class="w-14 h-14 mx-auto rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-3">
+            <i data-lucide="clipboard-list" class="w-7 h-7"></i>
+          </div>
+          <h4 class="text-sm font-bold text-white">Belum Ada Rencana Belanja</h4>
+          <p class="text-xs text-slate-400 max-w-[270px] mx-auto mt-1 leading-relaxed">
+            Catat barang kebutuhan yang ingin kamu beli agar belanja lebih terencana dan tidak melebihi saldo dompet.
+          </p>
+          <button id="btn-empty-add-plan" class="mt-4 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-950/40 touch-scale transition inline-flex items-center gap-1.5">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Buat Rencana Pembelian</span>
+          </button>
+        </div>
+      `;
+    } else {
+      itemsHtml = plannedItems.map(item => {
+        const itemTotal = (item.qty || 1) * (item.estimatedPrice || 0);
+        const priorityColors = {
+          'Tinggi': 'bg-rose-500/20 text-rose-300 border-rose-500/30',
+          'Sedang': 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+          'Rendah': 'bg-sky-500/20 text-sky-300 border-sky-500/30'
+        };
+        const pColor = priorityColors[item.priority] || priorityColors['Sedang'];
+
+        return `
+          <div class="glass-card rounded-2xl p-3.5 mb-2.5 border border-slate-800 hover:border-slate-700 transition">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${pColor}">
+                  Prioritas ${item.priority || 'Sedang'}
+                </span>
+                <span class="text-[9px] font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                  ${item.category || 'Bahan Pokok'}
+                </span>
+              </div>
+              <button class="btn-delete-plan-item p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition" data-id="${item.id}" title="Hapus Rencana">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <div class="mb-2">
+              <h4 class="text-xs font-bold text-white leading-snug">${item.name}</h4>
+              ${item.notes ? `<p class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1"><i data-lucide="file-text" class="w-3 h-3 text-slate-500"></i> ${item.notes}</p>` : ''}
+            </div>
+
+            <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+              <div>
+                <span class="text-[10px] text-slate-400 block">${item.qty} ${item.unit || 'pcs'} × ${Calculator.formatRupiah(item.estimatedPrice)}</span>
+                <span class="text-xs font-extrabold text-emerald-400">${Calculator.formatRupiah(itemTotal)}</span>
+              </div>
+
+              <button class="btn-move-plan-to-cart py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-950/40 touch-scale transition" data-id="${item.id}">
+                <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
+                <span>+ Beli (Ke Troli)</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    container.innerHTML = `
+      <div class="px-4 py-3">
+        <!-- Header Banner -->
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h2 class="text-base font-extrabold text-white flex items-center gap-2">
+              <i data-lucide="clipboard-list" class="w-5 h-5 text-emerald-400"></i>
+              <span>Rencana Pembelian</span>
+            </h2>
+            <p class="text-[11px] text-slate-400">Kebutuhan belanja sebelum dimasukkan ke troli</p>
+          </div>
+          <button id="btn-open-add-plan" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-950/40 touch-scale transition">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>+ Rencana</span>
+          </button>
+        </div>
+
+        <!-- Planning Financial Card -->
+        <div class="glass-card rounded-2xl p-3.5 mb-3.5 border border-slate-800 bg-slate-900/80">
+          <div class="grid grid-cols-2 gap-2 mb-2">
+            <div class="bg-slate-950/60 rounded-xl p-2.5 border border-slate-800">
+              <span class="text-[10px] text-slate-400 block uppercase font-medium">Total Estimasi Rencana</span>
+              <span class="text-sm font-extrabold text-emerald-400 mt-0.5 block">${Calculator.formatRupiah(totalEstimated)}</span>
+            </div>
+            <div class="bg-slate-950/60 rounded-xl p-2.5 border border-slate-800">
+              <span class="text-[10px] text-slate-400 block uppercase font-medium">Sisa Saldo Dompet</span>
+              <span class="text-sm font-extrabold ${remainingBudget < totalEstimated ? 'text-rose-400' : 'text-slate-200'} mt-0.5 block">${Calculator.formatRupiah(remainingBudget)}</span>
+            </div>
+          </div>
+
+          <div class="p-2 rounded-xl ${isBudgetSufficient ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300' : 'bg-rose-500/10 border border-rose-500/20 text-rose-300'} text-[11px] flex items-center gap-1.5">
+            <i data-lucide="${isBudgetSufficient ? 'shield-check' : 'alert-triangle'}" class="w-4 h-4 shrink-0"></i>
+            <span>
+              ${isBudgetSufficient 
+                ? `Estimasi rencana aman. Masih tersisa saldo ${Calculator.formatRupiah(remainingBudget - totalEstimated)}.` 
+                : `Perhatian: Estimasi rencana melebihi sisa dompet sebesar ${Calculator.formatRupiah(totalEstimated - remainingBudget)}.`}
+            </span>
+          </div>
+        </div>
+
+        <!-- List Section -->
+        <div class="mb-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Daftar Rencana (${plannedItems.length} item)</span>
+            ${plannedItems.length > 0 ? `
+              <span class="text-[10px] text-slate-500">Klik "+ Beli" saat barang sudah di tangan</span>
+            ` : ''}
+          </div>
+          <div>
+            ${itemsHtml}
+          </div>
+        </div>
+      </div>
+    `;
+
+    if (window.lucide) lucide.createIcons();
+    this.bindRencanaEvents();
+  },
+
+  /**
+   * Bind Events for Rencana Pembelian Tab
+   */
+  bindRencanaEvents() {
+    // Open add plan modal
+    document.getElementById('btn-open-add-plan')?.addEventListener('click', () => {
+      this.openAddPlannedModal();
+    });
+    document.getElementById('btn-empty-add-plan')?.addEventListener('click', () => {
+      this.openAddPlannedModal();
+    });
+
+    // Move to cart
+    document.querySelectorAll('.btn-move-plan-to-cart').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const planId = btn.getAttribute('data-id');
+        if (Store.movePlanToCart) {
+          const added = Store.movePlanToCart(planId);
+          if (added) {
+            this.vibrate(30);
+            this.showToast(`"${added.name}" berhasil dipindahkan ke troli belanja!`);
+            this.render();
+          }
+        }
+      });
+    });
+
+    // Delete plan item
+    document.querySelectorAll('.btn-delete-plan-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const planId = btn.getAttribute('data-id');
+        if (Store.removePlannedItem) {
+          Store.removePlannedItem(planId);
+          this.vibrate(25);
+          this.showToast('Barang dihapus dari rencana belanja.');
+          this.render();
+        }
+      });
+    });
+  },
+
+  /**
+   * Modal: Tambah Barang ke Rencana Pembelian
+   */
+  openAddPlannedModal() {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    modalContainer.className = 'fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in';
+    modalContainer.innerHTML = `
+      <div class="bg-slate-900 border-t sm:border border-slate-700/80 w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl animate-slide-up max-h-[90vh] overflow-y-auto space-y-4">
+        
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-extrabold text-white">Tambah Rencana Pembelian</h3>
+              <p class="text-[10px] text-slate-400">Catat kebutuhan sebelum berbelanja</p>
+            </div>
+          </div>
+          <button id="modal-plan-close" class="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-slate-800">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <form id="form-add-plan" class="space-y-3.5">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Nama Barang Kebutuhan *</label>
+            <input type="text" id="plan-input-name" required placeholder="Contoh: Susu UHT 1L, Sabun Cuci..." 
+              class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Kategori</label>
+              <select id="plan-input-category" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                <option value="Bahan Pokok">Bahan Pokok</option>
+                <option value="Dapur & Bumbu">Dapur & Bumbu</option>
+                <option value="Toiletries">Toiletries</option>
+                <option value="Minuman">Minuman</option>
+                <option value="Makanan Ringan">Makanan Ringan</option>
+                <option value="Lainnya">Lainnya</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Satuan</label>
+              <input type="text" id="plan-input-unit" value="pcs" placeholder="pcs, kg, pack..." 
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Target Jumlah</label>
+              <input type="number" id="plan-input-qty" value="1" min="1" step="1" inputmode="numeric" 
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Estimasi Harga (Rp)</label>
+              <input type="number" id="plan-input-price" value="15000" min="0" step="1000" inputmode="numeric" 
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Tingkat Prioritas</label>
+            <div class="grid grid-cols-3 gap-2">
+              <label class="flex items-center gap-1.5 p-2 rounded-xl bg-slate-800/80 border border-slate-700 cursor-pointer text-xs">
+                <input type="radio" name="plan-priority" value="Tinggi" class="text-emerald-500">
+                <span class="text-rose-400 font-bold text-[11px]">Tinggi</span>
+              </label>
+              <label class="flex items-center gap-1.5 p-2 rounded-xl bg-slate-800/80 border border-slate-700 cursor-pointer text-xs">
+                <input type="radio" name="plan-priority" value="Sedang" checked class="text-emerald-500">
+                <span class="text-amber-400 font-bold text-[11px]">Sedang</span>
+              </label>
+              <label class="flex items-center gap-1.5 p-2 rounded-xl bg-slate-800/80 border border-slate-700 cursor-pointer text-xs">
+                <input type="radio" name="plan-priority" value="Rendah" class="text-emerald-500">
+                <span class="text-sky-400 font-bold text-[11px]">Rendah</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Catatan Tambahan (Opsional)</label>
+            <input type="text" id="plan-input-notes" placeholder="Contoh: Cari merk Tropical, jangan yang botol kecil" 
+              class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+          </div>
+
+          <button type="submit" class="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 touch-scale transition">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Simpan ke Rencana Pembelian</span>
+          </button>
+        </form>
+      </div>
+    `;
+
+    if (window.lucide) lucide.createIcons();
+
+    const closeModal = () => {
+      modalContainer.className = 'hidden';
+      modalContainer.innerHTML = '';
+    };
+
+    document.getElementById('modal-plan-close')?.addEventListener('click', closeModal);
+
+    document.getElementById('form-add-plan')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('plan-input-name').value.trim();
+      const category = document.getElementById('plan-input-category').value;
+      const unit = document.getElementById('plan-input-unit').value.trim() || 'pcs';
+      const qty = parseInt(document.getElementById('plan-input-qty').value, 10) || 1;
+      const estimatedPrice = parseFloat(document.getElementById('plan-input-price').value) || 0;
+      const priority = document.querySelector('input[name="plan-priority"]:checked')?.value || 'Sedang';
+      const notes = document.getElementById('plan-input-notes').value.trim();
+
+      if (!name) {
+        this.showToast('Nama barang wajib diisi.', 'error');
+        return;
+      }
+
+      Store.addPlannedItem({
+        name,
+        category,
+        unit,
+        qty,
+        estimatedPrice,
+        priority,
+        notes
+      });
+
+      this.vibrate(30);
+      this.showToast(`"${name}" ditambahkan ke rencana belanja!`);
+      closeModal();
+      this.render();
+    });
+  },
+
+  /**
    * Render Tab 2: Riwayat (History & Price Trend Chart) [F-06]
    */
   renderRiwayatTab() {
@@ -3020,12 +3337,15 @@ CREATE POLICY "Akses Publik grocery_history" ON public.grocery_history FOR ALL U
 
     if (this.activeTab === 'belanja') {
       this.renderBelanjaTab(summary);
+    } else if (this.activeTab === 'rencana') {
+      this.renderRencanaTab(summary);
     } else if (this.activeTab === 'riwayat') {
       this.renderRiwayatTab();
     } else if (this.activeTab === 'anggaran') {
       this.renderAnggaranTab(summary);
-    } else if (this.activeTab === 'akun') {
-      this.renderAkunTab(summary);
+    } else {
+      this.activeTab = 'belanja';
+      this.renderBelanjaTab(summary);
     }
   }
 };
