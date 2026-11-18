@@ -2244,7 +2244,7 @@ const UI = {
     });
 
     // Toggle content views
-    ['belanja', 'rencana', 'riwayat', 'anggaran'].forEach(id => {
+    ['belanja', 'riwayat', 'anggaran'].forEach(id => {
       const el = document.getElementById(`tab-content-${id}`);
       if (el) {
         if (id === tabId) {
@@ -3739,7 +3739,7 @@ CREATE POLICY "Akses Publik grocery_history" ON public.grocery_history FOR ALL U
     }
 
     // Ensure corresponding tab content is visible and others hidden
-    ['belanja', 'rencana', 'riwayat', 'anggaran'].forEach(id => {
+    ['belanja', 'riwayat', 'anggaran'].forEach(id => {
       const el = document.getElementById(`tab-content-${id}`);
       if (el) {
         if (id === currentTab) {
@@ -3776,8 +3776,6 @@ CREATE POLICY "Akses Publik grocery_history" ON public.grocery_history FOR ALL U
 
     if (currentTab === 'belanja') {
       this.renderBelanjaTab(summary);
-    } else if (currentTab === 'rencana') {
-      this.renderRencanaTab(summary);
     } else if (currentTab === 'riwayat') {
       this.renderRiwayatTab();
     } else if (currentTab === 'anggaran') {

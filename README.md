@@ -7,9 +7,8 @@ Aplikasi web mobile (Progressive Web App) bergaya _native app_ yang dirancang un
 ## 📱 Arsitektur & Tampilan Mobile
 
 1. **Format Layar Smartphone**: Lebar maksimal 430px (responsif & _centered_ di desktop dengan latar belakang _dark slate_ elegan).
-2. **Navigasi Bawah (Bottom Navigation Bar)**: Fixed melayang di bagian bawah dengan ikon untuk 4 tab utama:
+2. **Navigasi Bawah (Bottom Navigation Bar)**: Fixed melayang di bagian bawah dengan ikon untuk 3 tab utama:
    - 🛒 **Belanja**: Input & daftar keranjang aktif dengan stepper kuantitas dan kalkulator diskon.
-   - 📋 **Rencana**: Rencana pembelian kebutuhan sebelum ke toko, estimasi biaya otomatis, dan 1-tap pindah ke troli.
    - 📜 **Riwayat**: Catatan belanja bulan lalu, rincian struk, dan grafik tren pengeluaran bulanan.
    - 💼 **Anggaran**: Pengaturan saldo dompet, dana darurat, dan ringkasan persentase kategori belanja.
 3. **Ergonomi Mobile**: Komponen ramah jempol (_thumb-friendly_), stepper (+ / -) satu tangan, tanpa scroll horizontal.

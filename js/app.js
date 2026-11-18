@@ -102,7 +102,7 @@ function bootApp() {
     const requestedTab = urlParams ? urlParams.get('tab') : null;
     const requestedAction = urlParams ? urlParams.get('action') : null;
 
-    if (requestedTab && ['belanja', 'rencana', 'riwayat', 'anggaran'].includes(requestedTab)) {
+    if (requestedTab && ['belanja', 'riwayat', 'anggaran'].includes(requestedTab)) {
       if (window.UI && typeof window.UI.switchTab === 'function') {
         window.UI.switchTab(requestedTab);
       }
