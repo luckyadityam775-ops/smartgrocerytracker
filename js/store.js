@@ -33,21 +33,23 @@ const Store = {
 
   ensureBenchmarkCatalog() {
     const catalog = this.getCatalog();
-    const benchmarks = [
-      { name: "Beras Rojolele", category: "Bahan Pokok", unit: "karung/5kg", lastPrice: 68000 },
-      { name: "Beras 5kg", category: "Bahan Pokok", unit: "pack", lastPrice: 68000 },
-      { name: "Telur 1kg", category: "Bahan Pokok", unit: "kg", lastPrice: 32000 },
-      { name: "Garam 500g", category: "Dapur & Bumbu", unit: "pack", lastPrice: 5000 },
-      { name: "Minyak Goreng 2L", category: "Bahan Pokok", unit: "liter", lastPrice: 43000 },
-      { name: "Sabun Cuci", category: "Toiletries", unit: "pcs", lastPrice: 20000 },
-      { name: "Wajan", category: "Lainnya", unit: "pcs", lastPrice: 100000 }
-    ];
+    const benchmarks = (typeof OfficialCatalog !== 'undefined') 
+      ? OfficialCatalog.getAll() 
+      : [
+          { name: "Beras Rojolele", category: "Bahan Pokok", unit: "karung/5kg", lastPrice: 68000 },
+          { name: "Beras 5kg", category: "Bahan Pokok", unit: "pack", lastPrice: 68000 },
+          { name: "Telur 1kg", category: "Bahan Pokok", unit: "kg", lastPrice: 32000 },
+          { name: "Garam 500g", category: "Dapur & Bumbu", unit: "pack", lastPrice: 5000 },
+          { name: "Minyak Goreng 2L", category: "Bahan Pokok", unit: "liter", lastPrice: 43000 },
+          { name: "Sabun Cuci", category: "Toiletries", unit: "pcs", lastPrice: 20000 },
+          { name: "Wajan", category: "Lainnya", unit: "pcs", lastPrice: 100000 }
+        ];
     let changed = false;
     benchmarks.forEach(bm => {
       const exists = catalog.some(c => c.name.toLowerCase() === bm.name.toLowerCase());
       if (!exists) {
         catalog.push({
-          id: 'cat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          id: bm.id || ('cat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
           name: bm.name,
           category: bm.category,
           unit: bm.unit,
@@ -253,14 +255,31 @@ const Store = {
     const lower = name.trim().toLowerCase();
     const exact = catalog.find((i) => i.name.toLowerCase() === lower);
     if (exact) return exact;
-    return catalog.find((i) => i.name.toLowerCase().includes(lower) || lower.includes(i.name.toLowerCase())) || null;
+    const partial = catalog.find((i) => i.name.toLowerCase().includes(lower) || lower.includes(i.name.toLowerCase()));
+    if (partial) return partial;
+    // Fallback to Official Lotte Mart Puri Indah Catalog
+    if (typeof OfficialCatalog !== 'undefined') {
+      return OfficialCatalog.findItem(name);
+    }
+    return null;
   },
 
   searchCatalog(query) {
     if (!query) return [];
     const catalog = this.getCatalog();
     const q = query.trim().toLowerCase();
-    return catalog.filter((i) => i.name.toLowerCase().includes(q)).slice(0, 5);
+    const results = [...catalog.filter((i) => i.name.toLowerCase().includes(q))];
+    
+    // Supplement from Official Catalog if available
+    if (typeof OfficialCatalog !== 'undefined') {
+      const officialMatches = OfficialCatalog.search(q, 8);
+      officialMatches.forEach(om => {
+        if (!results.some(r => r.name.toLowerCase() === om.name.toLowerCase())) {
+          results.push(om);
+        }
+      });
+    }
+    return results.slice(0, 8);
   },
 
   upsertCatalogItem(item) {

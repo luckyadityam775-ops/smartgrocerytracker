@@ -1182,6 +1182,44 @@ const UI = {
 
           <!-- Form [F-01] -->
           <form id="form-add-item" class="space-y-4" novalidate>
+            <!-- [Resmi Lotte Mart Puri Indah] Quick Pick Catalog -->
+            <div class="bg-slate-950/70 p-3 rounded-2xl border border-emerald-500/30 space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>Katalog Resmi Lotte Mart Puri Indah</span>
+                </label>
+                <span class="text-[10px] text-emerald-300 font-extrabold bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                  Harga Terverifikasi
+                </span>
+              </div>
+              
+              <select id="quick-pick-lotte-mart" class="w-full bg-slate-800 border border-slate-700 hover:border-emerald-500/50 rounded-xl px-3 py-2 text-xs text-emerald-300 font-semibold focus:outline-none focus:border-emerald-500">
+                <option value="">-- Pilih Cepat Barang Resmi Toko --</option>
+                <option value="Beras Rojolele">🌾 Beras Rojolele (5kg) • Resmi Lalu: Rp 68.000</option>
+                <option value="Minyak Goreng 2L">🍳 Minyak Goreng 2L • Resmi Lalu: Rp 43.000</option>
+                <option value="Telur 1kg">🥚 Telur 1kg • Resmi Lalu: Rp 32.000</option>
+                <option value="Garam 500g">🧂 Garam 500g • Resmi Lalu: Rp 5.000</option>
+                <option value="Sabun Cuci">🧼 Sabun Cuci • Resmi Lalu: Rp 20.000</option>
+                <option value="Wajan">🍳 Wajan • Resmi Lalu: Rp 100.000</option>
+                <option value="Indomie Goreng (5 pcs)">🍜 Indomie Goreng (5 pcs) • Resmi Lalu: Rp 15.000</option>
+                <option value="Daging Sapi Segar 1kg">🥩 Daging Sapi 1kg • Resmi Lalu: Rp 135.000</option>
+                <option value="Ayam Broiler Utuh 1 ekor">🍗 Ayam Broiler Utuh • Resmi Lalu: Rp 38.000</option>
+                <option value="Susu UHT Full Cream 1L">🥛 Susu UHT 1L • Resmi Lalu: Rp 19.000</option>
+                <option value="Gula Pasir Premium 1kg">🍬 Gula Pasir 1kg • Resmi Lalu: Rp 17.500</option>
+              </select>
+
+              <!-- Quick Chips -->
+              <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px]">
+                <button type="button" class="quick-lotte-chip whitespace-nowrap px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition" data-name="Beras Rojolele">🌾 Beras</button>
+                <button type="button" class="quick-lotte-chip whitespace-nowrap px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition" data-name="Minyak Goreng 2L">🍳 Minyak</button>
+                <button type="button" class="quick-lotte-chip whitespace-nowrap px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition" data-name="Telur 1kg">🥚 Telur</button>
+                <button type="button" class="quick-lotte-chip whitespace-nowrap px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition" data-name="Garam 500g">🧂 Garam</button>
+                <button type="button" class="quick-lotte-chip whitespace-nowrap px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition" data-name="Sabun Cuci">🧼 Sabun</button>
+                <button type="button" class="quick-lotte-chip whitespace-nowrap px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition" data-name="Wajan">🍳 Wajan</button>
+              </div>
+            </div>
+
             <!-- Nama Produk with Live Autocomplete -->
             <div>
               <label class="block text-xs font-semibold text-slate-300 mb-1">Nama Produk *</label>
@@ -1237,7 +1275,7 @@ const UI = {
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-300 mb-1">Harga Satuan (Rp) *</label>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Harga Satuan Saat Ini (Rp) *</label>
                 <input type="number" inputmode="numeric" id="input-price" placeholder="0" min="1" 
                   class="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-white focus:outline-none focus:border-emerald-500">
                 <p id="err-input-price" class="hidden text-[10px] text-rose-400 font-semibold mt-1">Harga tidak boleh 0 atau minus!</p>
@@ -1245,14 +1283,28 @@ const UI = {
             </div>
 
             <!-- Harga Bulan Lalu & Real-time Comparator Preview [F-04] -->
-            <div class="bg-slate-950/60 p-3 rounded-2xl border border-slate-800 space-y-2">
+            <div class="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
               <div class="flex items-center justify-between">
-                <label class="text-xs font-semibold text-slate-300 flex items-center gap-1">
-                  <i data-lucide="history" class="w-3.5 h-3.5 text-emerald-400"></i>
-                  <span>Harga Bulan Lalu (Rp):</span>
-                </label>
-                <input type="number" inputmode="numeric" id="input-last-price" placeholder="Otomatis / 0" min="0" 
-                  class="w-32 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs text-right text-slate-200 font-semibold focus:outline-none focus:border-emerald-500">
+                <div>
+                  <label class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                    <i data-lucide="history" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    <span>Harga Bulan Lalu (Rp):</span>
+                  </label>
+                  <span class="text-[10px] text-slate-400 block mt-0.5">Otomatis terisi atau ketik sendiri</span>
+                </div>
+                <input type="number" inputmode="numeric" id="input-last-price" placeholder="68000" min="0" 
+                  class="w-32 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-right text-emerald-300 font-extrabold focus:outline-none focus:border-emerald-500">
+              </div>
+
+              <!-- Official Store Benchmark Reference & Reset Button -->
+              <div class="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-800/80">
+                <span id="official-price-badge" class="text-slate-300 flex items-center gap-1.5 text-[11px]">
+                  <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+                  <span>Resmi Lotte Mart Puri Indah: <strong id="official-price-val" class="text-emerald-400">Rp 68.000</strong></span>
+                </span>
+                <button type="button" id="btn-use-official-price" class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-0.5 rounded-lg border border-emerald-500/30 transition">
+                  Pakai Resmi
+                </button>
               </div>
 
               <!-- Real-time Comparison Preview Badge -->
@@ -1354,6 +1406,81 @@ const UI = {
     const nominalContainer = document.getElementById('container-disc-nominal');
     const compPreview = document.getElementById('modal-comparison-preview');
     const autocompleteDiv = document.getElementById('autocomplete-results');
+    const quickSelect = document.getElementById('quick-pick-lotte-mart');
+    const officialPriceVal = document.getElementById('official-price-val');
+    const btnUseOfficial = document.getElementById('btn-use-official-price');
+
+    let isUserManuallyEditedLastPrice = false;
+
+    // Helper: Apply official Lotte Mart item data into modal form
+    const applyLotteMartItem = (item, isExplicitSelect = true) => {
+      if (!item) return;
+      if (isExplicitSelect) {
+        nameInput.value = item.name;
+        if (item.category) categoryInput.value = item.category;
+        if (item.unit) unitInput.value = item.unit;
+        if (item.currentPrice && (!priceInput.value || parseFloat(priceInput.value) <= 0)) {
+          priceInput.value = item.currentPrice;
+        }
+      }
+      if (item.lastPrice !== undefined) {
+        lastPriceInput.value = item.lastPrice;
+        if (officialPriceVal) {
+          officialPriceVal.textContent = Calculator.formatRupiah(item.lastPrice);
+        }
+      }
+      isUserManuallyEditedLastPrice = false;
+      document.getElementById('err-input-name')?.classList.add('hidden');
+      nameInput.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
+      updatePreviews();
+    };
+
+    // Quick-select dropdown: Populate full official Lotte Mart catalog
+    if (quickSelect && typeof OfficialCatalog !== 'undefined') {
+      const allOfficial = OfficialCatalog.getAll();
+      const currentSelected = quickSelect.value;
+      quickSelect.innerHTML = `<option value="">-- Pilih Cepat Barang Resmi Toko --</option>` +
+        allOfficial.map(item => `
+          <option value="${item.name}">${item.name} • Resmi Lalu: ${Calculator.formatRupiah(item.lastPrice)}</option>
+        `).join('');
+      if (currentSelected) quickSelect.value = currentSelected;
+
+      quickSelect.addEventListener('change', () => {
+        const selectedName = quickSelect.value;
+        if (!selectedName) return;
+        const found = Store.findCatalogItemByName(selectedName) || OfficialCatalog.findItem(selectedName);
+        if (found) {
+          applyLotteMartItem(found, true);
+        }
+      });
+    }
+
+    // Quick Chips (Beras, Minyak, Telur, Garam, Sabun, Wajan)
+    document.querySelectorAll('.quick-lotte-chip').forEach(chip => {
+      chip.addEventListener('click', (ev) => {
+        const chipName = ev.currentTarget.getAttribute('data-name');
+        const found = Store.findCatalogItemByName(chipName) || (typeof OfficialCatalog !== 'undefined' ? OfficialCatalog.findItem(chipName) : null);
+        if (found) {
+          applyLotteMartItem(found, true);
+        }
+      });
+    });
+
+    // "Pakai Resmi" button to restore official store price anytime
+    if (btnUseOfficial) {
+      btnUseOfficial.addEventListener('click', () => {
+        const queryName = nameInput.value.trim() || 'Beras Rojolele';
+        const found = Store.findCatalogItemByName(queryName) || (typeof OfficialCatalog !== 'undefined' ? OfficialCatalog.findItem(queryName) : null);
+        const officialPrice = (found && found.lastPrice) ? found.lastPrice : 68000;
+        lastPriceInput.value = officialPrice;
+        if (officialPriceVal) {
+          officialPriceVal.textContent = Calculator.formatRupiah(officialPrice);
+        }
+        isUserManuallyEditedLastPrice = false;
+        updatePreviews();
+        this.showToast(`✓ Menggunakan harga resmi Lotte Mart: ${Calculator.formatRupiah(officialPrice)}`);
+      });
+    }
 
     // Stepper modal
     document.getElementById('modal-qty-plus').addEventListener('click', () => {
@@ -1373,11 +1500,26 @@ const UI = {
       }
     });
 
-    // Autocomplete for Nama Produk
+    // Autocomplete & Instant Catalog Lookup for Nama Produk
     nameInput.addEventListener('input', (e) => {
       const q = e.target.value.trim();
       document.getElementById('err-input-name')?.classList.add('hidden');
       nameInput.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
+
+      // Instant lookup official catalog to prefill lastPrice and categories
+      if (q.length >= 2) {
+        const quickMatch = Store.findCatalogItemByName(q) || (typeof OfficialCatalog !== 'undefined' ? OfficialCatalog.findItem(q) : null);
+        if (quickMatch) {
+          if (officialPriceVal && quickMatch.lastPrice) {
+            officialPriceVal.textContent = Calculator.formatRupiah(quickMatch.lastPrice);
+          }
+          if (!isUserManuallyEditedLastPrice && quickMatch.lastPrice) {
+            lastPriceInput.value = quickMatch.lastPrice;
+          }
+          if (quickMatch.category) categoryInput.value = quickMatch.category;
+          if (quickMatch.unit) unitInput.value = quickMatch.unit;
+        }
+      }
 
       if (q.length < 2) {
         autocompleteDiv.classList.add('hidden');
@@ -1392,7 +1534,10 @@ const UI = {
               <span class="font-bold text-white">${item.name}</span>
               <span class="text-[10px] text-slate-400 block">${item.category} • ${item.unit}</span>
             </div>
-            <span class="text-xs text-emerald-400 font-semibold">${Calculator.formatRupiah(item.lastPrice)}</span>
+            <div class="text-right">
+              <span class="text-xs text-emerald-400 font-semibold block">${Calculator.formatRupiah(item.lastPrice)}</span>
+              <span class="text-[9px] text-slate-400">Resmi Lalu</span>
+            </div>
           </div>
         `).join('');
         autocompleteDiv.classList.remove('hidden');
@@ -1403,7 +1548,12 @@ const UI = {
             nameInput.value = target.getAttribute('data-name');
             categoryInput.value = target.getAttribute('data-category');
             unitInput.value = target.getAttribute('data-unit');
-            lastPriceInput.value = target.getAttribute('data-lastprice');
+            const targetLastPrice = parseFloat(target.getAttribute('data-lastprice')) || 0;
+            lastPriceInput.value = targetLastPrice;
+            if (officialPriceVal) {
+              officialPriceVal.textContent = Calculator.formatRupiah(targetLastPrice);
+            }
+            isUserManuallyEditedLastPrice = false;
             autocompleteDiv.classList.add('hidden');
             updatePreviews();
           });
@@ -1489,7 +1639,10 @@ const UI = {
       priceInput.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
       updatePreviews();
     });
-    lastPriceInput.addEventListener('input', updatePreviews);
+    lastPriceInput.addEventListener('input', () => {
+      isUserManuallyEditedLastPrice = true;
+      updatePreviews();
+    });
     qtyInput.addEventListener('input', updatePreviews);
     document.getElementById('input-disc-a')?.addEventListener('input', updatePreviews);
     document.getElementById('input-tier-a')?.addEventListener('input', updatePreviews);
@@ -1513,14 +1666,17 @@ const UI = {
       });
     }
 
-    // Prefill data if editing an existing item
+    // Prefill data if editing an existing item vs adding new item
     if (itemToEdit) {
       nameInput.value = itemToEdit.name || '';
       categoryInput.value = itemToEdit.category || 'Bahan Pokok';
       unitInput.value = itemToEdit.unit || 'pcs';
       qtyInput.value = itemToEdit.qty || 1;
       priceInput.value = itemToEdit.currentPrice || '';
-      lastPriceInput.value = itemToEdit.lastPrice || '';
+      lastPriceInput.value = itemToEdit.lastPrice !== undefined ? itemToEdit.lastPrice : '';
+      if (officialPriceVal && itemToEdit.lastPrice) {
+        officialPriceVal.textContent = Calculator.formatRupiah(itemToEdit.lastPrice);
+      }
       discountTypeSelect.value = itemToEdit.discountType || 'none';
 
       // Show relevant discount inputs
@@ -1539,6 +1695,15 @@ const UI = {
         if (dNom) dNom.value = itemToEdit.discountNominal || '';
       }
 
+      updatePreviews();
+    } else {
+      // New Item Mode: Pre-fill official Lotte Mart Puri Indah benchmark (Beras Rojolele Rp 68.000)
+      const defaultBm = (typeof OfficialCatalog !== 'undefined') ? OfficialCatalog.findItem('Beras Rojolele') : null;
+      const initialLastPrice = (defaultBm && defaultBm.lastPrice) ? defaultBm.lastPrice : 68000;
+      lastPriceInput.value = initialLastPrice;
+      if (officialPriceVal) {
+        officialPriceVal.textContent = Calculator.formatRupiah(initialLastPrice);
+      }
       updatePreviews();
     }
 
