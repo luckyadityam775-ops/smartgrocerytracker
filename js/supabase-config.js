@@ -69,18 +69,49 @@ window.initSupabaseClient = function(anonKey) {
   return null;
 };
 
-// Check for existing session or auth hash in URL when page loads
-if (typeof window !== 'undefined' && window.addEventListener) {
-  window.addEventListener('DOMContentLoaded', () => {
-    const client = window.initSupabaseClient();
-    if (client) {
-      client.auth.getSession().then(({ data: { session }, error }) => {
-        if (session && session.user && window.Auth && typeof window.Auth.handleGoogleAuthSession === 'function') {
-          window.Auth.handleGoogleAuthSession(session);
+// Immediately attempt initialization
+if (typeof window !== 'undefined') {
+  window.initSupabaseClient();
+
+  // Retry poller in case Supabase CDN script loads asynchronously
+  if (!window.supabaseClient) {
+    let retries = 0;
+    const retryTimer = setInterval(() => {
+      retries++;
+      const client = window.initSupabaseClient();
+      if (client || retries > 30) {
+        clearInterval(retryTimer);
+        if (client) {
+          if (window.SupabaseDB && !window.SupabaseDB.isReady) {
+            window.SupabaseDB.init();
+          }
+          if (window.UI) {
+            window.UI.render();
+          }
         }
-      }).catch(err => {
-        console.warn('[Supabase] getSession error:', err);
-      });
-    }
-  });
+      }
+    }, 100);
+  }
+}
+
+// Check for existing session or auth hash in URL when page loads
+function checkSupabaseSession() {
+  const client = window.supabaseClient || window.initSupabaseClient();
+  if (client && client.auth) {
+    client.auth.getSession().then(({ data: { session }, error }) => {
+      if (session && session.user && window.Auth && typeof window.Auth.handleGoogleAuthSession === 'function') {
+        window.Auth.handleGoogleAuthSession(session);
+      }
+    }).catch(err => {
+      console.warn('[Supabase] getSession error:', err);
+    });
+  }
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', checkSupabaseSession);
+  } else {
+    checkSupabaseSession();
+  }
 }

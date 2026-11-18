@@ -3881,10 +3881,25 @@ CREATE POLICY "Akses Publik grocery_history" ON public.grocery_history FOR ALL U
     });
   },
 
+  renderScheduled: false,
   /**
-   * Full App Render Loop
+   * Full App Render Loop (batched at 60fps with requestAnimationFrame for butter-smooth UI)
    */
   render() {
+    if (this.renderScheduled) return;
+    this.renderScheduled = true;
+    const run = () => {
+      this.renderScheduled = false;
+      this._doRender();
+    };
+    if (typeof requestAnimationFrame !== 'undefined') {
+      requestAnimationFrame(run);
+    } else {
+      setTimeout(run, 0);
+    }
+  },
+
+  _doRender() {
     const currentUser = window.Auth ? window.Auth.getCurrentUser() : null;
     const gatekeeper = document.getElementById('auth-gatekeeper');
     const mainShell = document.getElementById('main-app-shell');

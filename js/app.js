@@ -27,6 +27,14 @@ function bootApp() {
   }
 
   try {
+    if (window.SupabaseDB && typeof window.SupabaseDB.init === 'function') {
+      window.SupabaseDB.init();
+    }
+  } catch (e) {
+    console.error('[Boot] SupabaseDB.init error:', e);
+  }
+
+  try {
     if (window.Store && typeof window.Store.init === 'function') {
       window.Store.init();
     }

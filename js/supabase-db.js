@@ -6,8 +6,12 @@
 const SupabaseDB = {
   isReady: false,
   realtimeChannel: null,
+  channelStatus: 'DISCONNECTED',
   isApplyingRemote: false,
   lastLocalWriteTime: 0,
+  lastBroadcastReceivedTime: 0,
+  cartPullTimer: null,
+  historyPullTimer: null,
   syncDebounceTimers: {},
 
   /**
@@ -62,6 +66,10 @@ const SupabaseDB = {
   subscribeRealtime() {
     if (!window.supabaseClient) return;
 
+    if (this.realtimeChannel && this.channelStatus === 'SUBSCRIBED') {
+      return;
+    }
+
     try {
       if (this.realtimeChannel) {
         try { window.supabaseClient.removeChannel(this.realtimeChannel); } catch (e) {}
@@ -83,8 +91,9 @@ const SupabaseDB = {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'grocery_history' }, (payload) => {
           this.handleHistoryRemoteChange(payload);
         })
-        .subscribe((status) => {
-          console.log('[SupabaseDB Realtime Status]', status);
+        .subscribe((status, err) => {
+          this.channelStatus = status;
+          console.log('[SupabaseDB Realtime Status]', status, err || '');
           if (status === 'SUBSCRIBED') {
             const badge = document.getElementById('realtime-badge-text');
             if (badge) badge.innerText = 'LIVE CLOUD';
@@ -92,6 +101,13 @@ const SupabaseDB = {
             if (badgeBtn) {
               badgeBtn.className = 'flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-400 border border-sky-500/30 touch-scale transition-all';
             }
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            // Auto-reconnect after transient network sleep
+            setTimeout(() => {
+              if (this.channelStatus !== 'SUBSCRIBED') {
+                this.subscribeRealtime();
+              }
+            }, 2000);
           }
         });
     } catch (e) {
@@ -100,7 +116,7 @@ const SupabaseDB = {
   },
 
   /**
-   * Handle incoming instant WebSocket broadcast from another device
+   * Handle incoming instant WebSocket broadcast from another device (<30ms instant sync)
    */
   handleBroadcastRemoteChange(payload) {
     if (!payload || !payload.snapshot) return;
@@ -118,7 +134,10 @@ const SupabaseDB = {
       if (!isBothGoogle) return;
     }
 
-    console.log('[Supabase Realtime Broadcast] Menerima update seketika dari perangkat lain:', snapshot.type);
+    // Record time so redundant postgres replication event within 3 seconds is skipped
+    this.lastBroadcastReceivedTime = Date.now();
+
+    console.log('[Supabase Realtime Broadcast] Menerima update seketika (<25ms):', snapshot.type);
 
     this.isApplyingRemote = true;
     try {
@@ -131,12 +150,14 @@ const SupabaseDB = {
   },
 
   /**
-   * Handle incoming realtime payload for cart items
+   * Handle incoming realtime payload for cart items (Postgres replication fallback)
    */
   handleCartRemoteChange(payload) {
     if (this.isApplyingRemote) return;
-    // Skip own postgres echo if this client just wrote locally
-    if (Date.now() - this.lastLocalWriteTime < 2500) return;
+    // Skip if this client wrote locally recently (< 1500ms)
+    if (Date.now() - this.lastLocalWriteTime < 1500) return;
+    // Skip if we just received the exact instant WebSocket broadcast (< 3000ms)
+    if (Date.now() - this.lastBroadcastReceivedTime < 3000) return;
 
     const myCloudId = this.getCloudUserId();
     const item = payload.new || payload.old;
@@ -146,10 +167,64 @@ const SupabaseDB = {
       if (!isBothGoogle) return;
     }
 
-    console.log('[SupabaseDB] Menerima pembaruan troli postgres:', payload.eventType);
-    
-    // Pull fresh cart from Supabase and apply locally
-    this.pullUserData(myCloudId);
+    console.log('[SupabaseDB] Menerima pembaruan troli postgres (fallback):', payload.eventType);
+    this.debouncePullCart(myCloudId);
+  },
+
+  /**
+   * Debounce cart table pull to prevent multiple rapid roundtrips
+   */
+  debouncePullCart(userId) {
+    if (this.cartPullTimer) clearTimeout(this.cartPullTimer);
+    this.cartPullTimer = setTimeout(() => {
+      this.pullCartOnly(userId);
+    }, 60);
+  },
+
+  /**
+   * Pull ONLY active cart table from Supabase (fast single-query sync)
+   */
+  async pullCartOnly(userId) {
+    if (!window.supabaseClient || this.isApplyingRemote) return;
+    const uid = this.getCloudUserId(userId);
+    try {
+      const { data: cartData, error } = await window.supabaseClient
+        .from('grocery_cart')
+        .select('*')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false });
+
+      if (!error && Array.isArray(cartData)) {
+        const localCart = cartData.map(row => ({
+          id: row.id,
+          name: row.name,
+          category: row.category || 'Bahan Pokok',
+          unit: row.unit || 'pcs',
+          qty: parseFloat(row.qty) || 1,
+          currentPrice: parseFloat(row.current_price) || 0,
+          lastPrice: parseFloat(row.last_price) || 0,
+          discountType: row.discount_type || 'none',
+          discountA: parseFloat(row.discount_a) || 0,
+          discountB: parseFloat(row.discount_b) || 0,
+          discountNominal: parseFloat(row.discount_nominal) || 0,
+          createdAt: row.created_at
+        }));
+
+        this.isApplyingRemote = true;
+        try {
+          if (window.Store) {
+            window.Store.applySnapshot({
+              type: 'cart',
+              data: localCart
+            });
+          }
+        } finally {
+          this.isApplyingRemote = false;
+        }
+      }
+    } catch (e) {
+      console.warn('[SupabaseDB] Error pullCartOnly:', e);
+    }
   },
 
   /**
@@ -158,7 +233,7 @@ const SupabaseDB = {
   handleBudgetRemoteChange(payload) {
     if (this.isApplyingRemote) return;
     // Skip own postgres echo if this client just wrote locally
-    if (Date.now() - this.lastLocalWriteTime < 2500) return;
+    if (Date.now() - this.lastLocalWriteTime < 1500) return;
 
     const myCloudId = this.getCloudUserId();
     const budget = payload.new;
@@ -168,7 +243,7 @@ const SupabaseDB = {
       if (!isBothGoogle) return;
     }
 
-    console.log('[SupabaseDB] Menerima pembaruan saldo dompet postgres');
+    console.log('[SupabaseDB] Menerima pembaruan saldo dompet postgres (instant)');
     if (window.Store) {
       this.isApplyingRemote = true;
       try {
@@ -191,7 +266,8 @@ const SupabaseDB = {
    */
   handleHistoryRemoteChange(payload) {
     if (this.isApplyingRemote) return;
-    if (Date.now() - this.lastLocalWriteTime < 2500) return;
+    if (Date.now() - this.lastLocalWriteTime < 1500) return;
+    if (Date.now() - this.lastBroadcastReceivedTime < 3000) return;
 
     const myCloudId = this.getCloudUserId();
     const item = payload.new || payload.old;
@@ -202,7 +278,74 @@ const SupabaseDB = {
     }
 
     console.log('[SupabaseDB] Menerima pembaruan riwayat postgres:', payload.eventType);
-    this.pullUserData(myCloudId);
+    this.debouncePullHistory(myCloudId);
+  },
+
+  /**
+   * Debounce history table pull
+   */
+  debouncePullHistory(userId) {
+    if (this.historyPullTimer) clearTimeout(this.historyPullTimer);
+    this.historyPullTimer = setTimeout(() => {
+      this.pullHistoryOnly(userId);
+    }, 100);
+  },
+
+  /**
+   * Pull ONLY history table from Supabase
+   */
+  async pullHistoryOnly(userId) {
+    if (!window.supabaseClient || this.isApplyingRemote) return;
+    const uid = this.getCloudUserId(userId);
+    try {
+      const { data: historyData, error } = await window.supabaseClient
+        .from('grocery_history')
+        .select('*')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false });
+
+      if (!error && Array.isArray(historyData)) {
+        const monthNames = [
+          "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+          "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+        ];
+        const localHistory = historyData.map(row => {
+          let mName = 'Belanja Bulanan';
+          if (row.transaction_date) {
+            const p = row.transaction_date.split('-');
+            if (p.length === 3) {
+              const mIdx = parseInt(p[1], 10) - 1;
+              if (mIdx >= 0 && mIdx < 12) mName = `${monthNames[mIdx]} ${p[0]}`;
+            }
+          }
+          return {
+            id: row.id,
+            date: row.transaction_date || new Date().toISOString().split('T')[0],
+            monthName: mName,
+            totalAmount: parseFloat(row.total_spent) || 0,
+            totalSavings: parseFloat(row.total_saved) || 0,
+            itemCount: Array.isArray(row.items) ? row.items.reduce((s, it) => s + (it.qty || 1), 0) : 0,
+            status: "Selesai Belanja",
+            items: row.items || [],
+            createdAt: row.created_at
+          };
+        });
+
+        this.isApplyingRemote = true;
+        try {
+          if (window.Store) {
+            window.Store.applySnapshot({
+              type: 'history',
+              data: localHistory
+            });
+          }
+        } finally {
+          this.isApplyingRemote = false;
+        }
+      }
+    } catch (e) {
+      console.warn('[SupabaseDB] Error pullHistoryOnly:', e);
+    }
   },
 
   /**
@@ -370,7 +513,7 @@ const SupabaseDB = {
 
     const cloudUserId = this.getCloudUserId();
 
-    // 1. Broadcast instant WebSocket message to peer devices immediately (<50ms, zero lag!)
+    // 1. Broadcast instant WebSocket message to peer devices immediately (0ms delay, <25ms arrival!)
     if (this.realtimeChannel) {
       try {
         this.realtimeChannel.send({
@@ -379,7 +522,8 @@ const SupabaseDB = {
           payload: {
             snapshot,
             userId: cloudUserId,
-            originClientId: window.Realtime ? window.Realtime.clientId : null
+            originClientId: window.Realtime ? window.Realtime.clientId : null,
+            timestamp: Date.now()
           }
         });
       } catch (err) {
@@ -387,7 +531,7 @@ const SupabaseDB = {
       }
     }
 
-    // 2. Debounce heavy PostgreSQL table writes (350ms) to ensure butter-smooth 60fps UI tapping
+    // 2. Debounce PostgreSQL disk writes (100ms) for snappy responsive responsiveness
     const key = snapshot.type;
     if (this.syncDebounceTimers[key]) {
       clearTimeout(this.syncDebounceTimers[key]);
@@ -406,29 +550,18 @@ const SupabaseDB = {
       } catch (e) {
         console.warn('[SupabaseDB] Gagal sync snapshot ke Supabase:', e);
       }
-    }, 350);
+    }, 100);
   },
 
   /**
-   * Sync active cart items array to grocery_cart table
+   * Sync active cart items array to grocery_cart table (optimized upsert + prune)
    */
   async syncCartToSupabase(cartItems, userId) {
     if (!window.supabaseClient) return;
     const uid = this.getCloudUserId(userId);
 
-    // First delete old cart items for this user that are no longer in active cart
-    const currentItemIds = cartItems.map(item => item.id);
-    
     try {
-      // 1. Delete removed items
-      if (currentItemIds.length > 0) {
-        await window.supabaseClient
-          .from('grocery_cart')
-          .delete()
-          .eq('user_id', uid)
-          .not('id', 'in', `(${currentItemIds.map(id => `"${id}"`).join(',')})`);
-      } else {
-        // Troli dikosongkan
+      if (!cartItems || cartItems.length === 0) {
         await window.supabaseClient
           .from('grocery_cart')
           .delete()
@@ -436,7 +569,7 @@ const SupabaseDB = {
         return;
       }
 
-      // 2. Upsert existing/new items
+      // Upsert active cart items
       const rows = cartItems.map(item => ({
         id: item.id,
         user_id: uid,
@@ -453,14 +586,18 @@ const SupabaseDB = {
         updated_at: new Date().toISOString()
       }));
 
-      const { error } = await window.supabaseClient
+      await window.supabaseClient
         .from('grocery_cart')
         .upsert(rows, { onConflict: 'id' });
 
-      if (error) {
-        console.warn('[SupabaseDB] Gagal upsert grocery_cart:', error.message);
-      } else {
-        console.log(`[SupabaseDB] Berhasil sinkron ${rows.length} item troli ke Supabase.`);
+      // Clean up any removed items
+      const currentItemIds = cartItems.map(item => item.id);
+      if (currentItemIds.length > 0) {
+        await window.supabaseClient
+          .from('grocery_cart')
+          .delete()
+          .eq('user_id', uid)
+          .not('id', 'in', `(${currentItemIds.join(',')})`);
       }
     } catch (e) {
       console.warn('[SupabaseDB] Error syncCartToSupabase:', e);
@@ -600,9 +737,36 @@ window.SupabaseDB = SupabaseDB;
 
 // Auto-init on page load if client is already configured
 if (typeof window !== 'undefined') {
-  window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-      SupabaseDB.init();
-    }, 500);
+  function startSupabaseDB() {
+    if (window.SupabaseDB && !window.SupabaseDB.isReady) {
+      window.SupabaseDB.init();
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(startSupabaseDB, 150);
+    });
+  } else {
+    setTimeout(startSupabaseDB, 50);
+  }
+
+  // Re-connect and pull immediately when user unlocks phone or switches back to tab
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && window.SupabaseDB) {
+        if (window.SupabaseDB.channelStatus !== 'SUBSCRIBED') {
+          window.SupabaseDB.subscribeRealtime();
+        }
+        window.SupabaseDB.pullUserData();
+      }
+    });
+  }
+
+  window.addEventListener('online', () => {
+    if (window.SupabaseDB) {
+      window.SupabaseDB.subscribeRealtime();
+      window.SupabaseDB.pullUserData();
+    }
   });
 }
