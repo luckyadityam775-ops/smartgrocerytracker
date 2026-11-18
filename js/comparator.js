@@ -3,9 +3,18 @@
  * Compares current unit price against historical/last month's price in real-time.
  */
 
-if (typeof Calculator === 'undefined' && typeof require !== 'undefined') {
-  var { Calculator } = require('./calculator.js');
-}
+const getCalculator = () => {
+  if (typeof Calculator !== 'undefined') return Calculator;
+  if (typeof window !== 'undefined' && window.Calculator) return window.Calculator;
+  if (typeof require !== 'undefined') {
+    try {
+      return require('./calculator.js').Calculator;
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+};
 
 const Comparator = {
   /**
@@ -15,13 +24,15 @@ const Comparator = {
    * @returns {object} Comparison details with badge styling and text
    */
   compare(currentPrice, lastPrice) {
-    const curr = Calculator.parseNumber(currentPrice);
-    const prev = Calculator.parseNumber(lastPrice);
+    const calc = getCalculator();
+    const curr = calc ? calc.parseNumber(currentPrice) : Number(currentPrice || 0);
+    const prev = calc ? calc.parseNumber(lastPrice) : Number(lastPrice || 0);
+    const formatRp = calc ? calc.formatRupiah.bind(calc) : (n) => 'Rp ' + Number(n).toLocaleString('id-ID');
 
     if (curr <= 0) {
       return {
         type: 'empty',
-        label: prev > 0 ? `Bulan Lalu: ${Calculator.formatRupiah(prev)}` : 'Ketik Harga',
+        label: prev > 0 ? `Bulan Lalu: ${formatRp(prev)}` : 'Ketik Harga',
         arrow: '•',
         icon: 'info',
         diffAmount: 0,
@@ -29,7 +40,7 @@ const Comparator = {
         badgeClass: 'badge-diff-equal',
         textClass: 'text-slate-400',
         bgClass: 'bg-slate-500/10 border-slate-500/30',
-        summary: prev > 0 ? `Patokan harga bulan lalu: ${Calculator.formatRupiah(prev)}` : 'Ketik harga untuk melihat perbandingan'
+        summary: prev > 0 ? `Patokan harga bulan lalu: ${formatRp(prev)}` : 'Ketik harga untuk melihat perbandingan'
       };
     }
 
@@ -55,7 +66,7 @@ const Comparator = {
       // Lebih Mahal (Merah)
       return {
         type: 'higher',
-        label: `+${Calculator.formatRupiah(diff)} (+${diffPercent}%)`,
+        label: `+${formatRp(diff)} (+${diffPercent}%)`,
         arrow: '↑',
         icon: 'trending-up',
         diffAmount: diff,
@@ -63,14 +74,14 @@ const Comparator = {
         badgeClass: 'badge-diff-higher',
         textClass: 'text-rose-400 font-semibold',
         bgClass: 'bg-rose-500/10 border-rose-500/30',
-        summary: `Harga lebih mahal ${Calculator.formatRupiah(diff)} dibanding bulan lalu (${Calculator.formatRupiah(prev)})`
+        summary: `Harga lebih mahal ${formatRp(diff)} dibanding bulan lalu (${formatRp(prev)})`
       };
     } else if (diff < 0) {
       // Lebih Murah (Hijau)
       const absDiff = Math.abs(diff);
       return {
         type: 'lower',
-        label: `-${Calculator.formatRupiah(absDiff)} (-${diffPercent}%)`,
+        label: `-${formatRp(absDiff)} (-${diffPercent}%)`,
         arrow: '↓',
         icon: 'trending-down',
         diffAmount: -absDiff,
@@ -78,7 +89,7 @@ const Comparator = {
         badgeClass: 'badge-diff-lower',
         textClass: 'text-emerald-400 font-semibold',
         bgClass: 'bg-emerald-500/10 border-emerald-500/30',
-        summary: `Lebih hemat ${Calculator.formatRupiah(absDiff)} dibanding bulan lalu (${Calculator.formatRupiah(prev)})`
+        summary: `Lebih hemat ${formatRp(absDiff)} dibanding bulan lalu (${formatRp(prev)})`
       };
     } else {
       // Sama persis / Stabil (Abu-abu)
@@ -92,7 +103,7 @@ const Comparator = {
         badgeClass: 'badge-diff-equal',
         textClass: 'text-slate-400',
         bgClass: 'bg-slate-500/10 border-slate-500/30',
-        summary: `Harga sama persis dengan bulan lalu (${Calculator.formatRupiah(prev)})`
+        summary: `Harga sama persis dengan bulan lalu (${formatRp(prev)})`
       };
     }
   },
