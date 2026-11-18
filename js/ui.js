@@ -33,6 +33,12 @@ const UI = {
     const container = document.getElementById('sticky-budget-header');
     if (!container) return;
 
+    // Budget Safety Cap hanya dimunculkan di menu Belanja saja
+    if (this.activeTab && this.activeTab !== 'belanja') {
+      container.classList.add('hidden');
+      return;
+    }
+
     const {
       budgetLimit,
       grandTotal,
@@ -77,7 +83,7 @@ const UI = {
       shakeClass = 'animate-shake';
     }
 
-    container.className = `sticky top-0 z-30 ${containerBg} border-b ${headerBorder} px-4 py-3 transition-all duration-300 ${shakeClass}`;
+    container.className = `sticky top-0 z-30 ${containerBg} backdrop-blur-md border-b ${headerBorder} px-4 py-3 transition-all duration-300 ${shakeClass} shadow-md`;
 
     container.innerHTML = `
       <div class="flex items-center justify-between gap-2 mb-2">
@@ -166,7 +172,7 @@ const UI = {
    * Render Tab 1: Belanja (Cart Items List, Store/Date Session & Controls) [SRS F-01, F-02, F-03, F-04]
    */
   renderBelanjaTab(summary) {
-    const container = document.getElementById('tab-content-belanja');
+    const container = document.getElementById('belanja-body-container') || document.getElementById('tab-content-belanja');
     if (!container) return;
 
     const { items, grandTotal, allSavings, totalItemsCount } = summary;
@@ -199,7 +205,7 @@ const UI = {
       itemsHtml = items.map((item) => {
         const comp = Comparator.compare(item.currentPrice, item.lastPrice);
         const hasDiscount = item.discountType && item.discountType !== 'none';
-        
+
         return `
           <div class="glass-card rounded-2xl p-3.5 mb-3 transition-all duration-200 relative overflow-hidden" data-id="${item.id}">
             <!-- Top Row: Product Name & Category Badge & Delete -->
@@ -336,7 +342,35 @@ const UI = {
         <!-- Sticky Floating Bottom Bar for Checkout & Quick Add [F-06] -->
         ${items.length > 0 ? `
           <div class="mt-6 pt-4 border-t border-slate-800/80 pb-20">
-            <div class="bg-gradient-to-r from-emerald-950/60 to-slate-900/90 rounded-2xl p-4 border border-emerald-500/20 mb-4 shadow-xl">
+            <!-- Pemberitahuan Merah jika Overbudget saat mau menyelesaikan belanja -->
+            ${summary.isOverbudget ? `
+              <div class="mb-4 p-4 rounded-2xl bg-rose-950/90 border-2 border-rose-500/80 text-rose-200 shadow-2xl shadow-rose-950/80 animate-shake">
+                <div class="flex items-start gap-3">
+                  <div class="w-8 h-8 rounded-xl bg-rose-500/30 text-rose-400 flex items-center justify-center shrink-0 mt-0.5 border border-rose-500/50">
+                    <i data-lucide="alert-octagon" class="w-5 h-5 text-rose-300"></i>
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between flex-wrap gap-1">
+                      <span class="text-xs font-black tracking-wider uppercase text-rose-300 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span>
+                        Pemberitahuan Overbudget!
+                      </span>
+                      <span class="text-[11px] font-extrabold text-white bg-rose-600/90 px-2 py-0.5 rounded-lg border border-rose-400/40">
+                        Defisit: -${Calculator.formatRupiah(Math.abs(summary.remainingBudget))}
+                      </span>
+                    </div>
+                    <p class="text-xs font-bold text-rose-100 mt-1.5 leading-snug">
+                      Total belanja melebihi batas saldo dompet!
+                    </p>
+                    <p class="text-[11px] text-rose-300/90 mt-1 leading-relaxed">
+                      Kurangi kuantitas atau batalkan barang sekunder sebelum menyelesaikan belanja agar saldo tetap aman.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ` : ''}
+
+            <div class="${summary.isOverbudget ? 'bg-gradient-to-r from-rose-950/70 to-slate-900/90 border-rose-500/40' : 'bg-gradient-to-r from-emerald-950/60 to-slate-900/90 border-emerald-500/20'} rounded-2xl p-4 border mb-4 shadow-xl">
               <div class="flex items-center justify-between text-xs text-slate-300 mb-1">
                 <span>Total Item Belanja:</span>
                 <span class="font-bold text-white">${totalItemsCount} barang</span>
@@ -347,14 +381,14 @@ const UI = {
               </div>
               <div class="flex items-center justify-between text-sm font-extrabold text-white pt-2 border-t border-slate-800">
                 <span>Total Pembayaran:</span>
-                <span class="text-base text-emerald-400">${Calculator.formatRupiah(grandTotal)}</span>
+                <span class="text-base ${summary.isOverbudget ? 'text-rose-400 font-black' : 'text-emerald-400'}">${Calculator.formatRupiah(grandTotal)}</span>
               </div>
             </div>
 
             <!-- [F-06] Primary Action: Selesaikan & Simpan Belanja Bulan Ini -->
-            <button id="btn-finish-shopping" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/40 touch-scale">
-              <i data-lucide="check-circle-2" class="w-5 h-5"></i>
-              <span>Selesaikan & Simpan Belanja Bulan Ini</span>
+            <button id="btn-finish-shopping" class="w-full py-3.5 px-4 rounded-2xl ${summary.isOverbudget ? 'bg-gradient-to-r from-rose-600 via-rose-500 to-red-700 hover:from-rose-500 hover:to-red-600 shadow-rose-950/60 animate-pulse' : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-900/40'} text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg touch-scale">
+              <i data-lucide="${summary.isOverbudget ? 'alert-triangle' : 'check-circle-2'}" class="w-5 h-5"></i>
+              <span>${summary.isOverbudget ? 'Selesaikan Belanja (Peringatan Overbudget)' : 'Selesaikan & Simpan Belanja Bulan Ini'}</span>
             </button>
             <p class="text-[10px] text-center text-slate-400 mt-2">
               Item akan diarsipkan ke Riwayat dan memperbarui patokan harga bulan depan.
@@ -611,9 +645,9 @@ const UI = {
           <div class="p-2 rounded-xl ${isBudgetSufficient ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300' : 'bg-rose-500/10 border border-rose-500/20 text-rose-300'} text-[11px] flex items-center gap-1.5">
             <i data-lucide="${isBudgetSufficient ? 'shield-check' : 'alert-triangle'}" class="w-4 h-4 shrink-0"></i>
             <span>
-              ${isBudgetSufficient 
-                ? `Estimasi rencana aman. Masih tersisa saldo ${Calculator.formatRupiah(remainingBudget - totalEstimated)}.` 
-                : `Perhatian: Estimasi rencana melebihi sisa dompet sebesar ${Calculator.formatRupiah(totalEstimated - remainingBudget)}.`}
+              ${isBudgetSufficient
+        ? `Estimasi rencana aman. Masih tersisa saldo ${Calculator.formatRupiah(remainingBudget - totalEstimated)}.`
+        : `Perhatian: Estimasi rencana melebihi sisa dompet sebesar ${Calculator.formatRupiah(totalEstimated - remainingBudget)}.`}
             </span>
           </div>
         </div>
@@ -830,7 +864,7 @@ const UI = {
     if (history.length > 0) {
       const chartData = [...history].reverse().slice(-4); // Last 4 sessions
       const maxAmount = Math.max(...chartData.map(h => h.totalAmount), 500000);
-      
+
       const barsHtml = chartData.map((session, idx) => {
         const heightPercent = Math.max(15, Math.round((session.totalAmount / maxAmount) * 100));
         return `
@@ -1696,43 +1730,102 @@ const UI = {
     const discount = Store.getCartDiscount();
     const summary = Calculator.calculateCartSummary(cart, budget.monthlyLimit, discount);
 
+    if (summary.isOverbudget) {
+      this.vibrate([100, 60, 100, 60, 150]);
+      this.showToast('⚠️ Peringatan: Total belanja melebihi batas saldo dompet!', 'error');
+    }
+
     modal.classList.remove('hidden');
     modal.innerHTML = `
       <div class="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
-        <div class="w-full max-w-[430px] bg-slate-900 border border-slate-700/80 rounded-t-3xl sm:rounded-3xl p-5 animate-slide-up">
-          <div class="text-center mb-4">
-            <div class="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-2 border border-emerald-500/30">
-              <i data-lucide="check-check" class="w-7 h-7"></i>
+        <div class="w-full max-w-[430px] bg-slate-900 border ${summary.isOverbudget ? 'border-2 border-rose-500/90 shadow-2xl shadow-rose-950' : 'border border-slate-700/80'} rounded-t-3xl sm:rounded-3xl p-5 animate-slide-up">
+          ${summary.isOverbudget ? `
+            <!-- Header Pemberitahuan Merah Tegas Overbudget -->
+            <div class="text-center mb-4">
+              <div class="w-14 h-14 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto mb-2 border-2 border-rose-500/50 animate-pulse">
+                <i data-lucide="alert-octagon" class="w-8 h-8 text-rose-400"></i>
+              </div>
+              <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 text-[11px] font-black uppercase tracking-wider border border-rose-500/40 mb-2">
+                <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-rose-400"></i>
+                Pemberitahuan Overbudget!
+              </div>
+              <h3 class="text-base font-extrabold text-white">Total Belanja Melebihi Batas Dompet!</h3>
+              <p class="text-xs text-rose-200/90 max-w-xs mx-auto mt-1 leading-relaxed">
+                Total belanjaan kamu menembus limit anggaran bulanan. Sebaiknya kurangi kuantitas atau batalkan barang sekunder sebelum menyimpan struk.
+              </p>
             </div>
-            <h3 class="text-base font-bold text-white">Selesaikan Belanja Bulan Ini?</h3>
-            <p class="text-xs text-slate-400 max-w-xs mx-auto">
-              Seluruh ${summary.totalItemsCount} barang belanjaan akan diarsipkan ke menu Riwayat dan harga saat ini akan dijadikan patokan bulan depan.
-            </p>
-          </div>
 
-          <div class="bg-slate-950/80 rounded-2xl p-3 border border-slate-800 text-xs space-y-2 mb-4">
-            <div class="flex justify-between text-slate-300">
-              <span>Total Pengeluaran:</span>
-              <strong class="text-white">${Calculator.formatRupiah(summary.grandTotal)}</strong>
+            <!-- Banner Kotak Merah Peringatan Detail -->
+            <div class="bg-rose-950/80 rounded-2xl p-3.5 border-2 border-rose-500/60 text-xs space-y-2 mb-4 shadow-inner">
+              <div class="flex justify-between text-slate-300">
+                <span>Batas Saldo Dompet:</span>
+                <span class="font-bold text-slate-200">${Calculator.formatRupiah(summary.budgetLimit)}</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>Total Tagihan Belanja:</span>
+                <strong class="text-rose-300 text-sm font-extrabold">${Calculator.formatRupiah(summary.grandTotal)}</strong>
+              </div>
+              <div class="flex justify-between text-emerald-400">
+                <span>Total Dihemat:</span>
+                <strong>${Calculator.formatRupiah(summary.allSavings)}</strong>
+              </div>
+              <div class="flex justify-between text-rose-400 pt-2 border-t border-rose-800/80 font-black">
+                <span class="flex items-center gap-1">
+                  <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+                  Defisit / Saldo Minus:
+                </span>
+                <span class="text-rose-400 text-sm font-extrabold">- ${Calculator.formatRupiah(Math.abs(summary.remainingBudget))}</span>
+              </div>
+              <div class="text-[11px] text-rose-200 font-bold bg-rose-900/60 p-2.5 rounded-xl mt-1.5 border border-rose-500/30 leading-snug">
+                ⚠️ Total belanja melebihi batas saldo dompet! Kurangi kuantitas atau batalkan barang sekunder.
+              </div>
             </div>
-            <div class="flex justify-between text-emerald-400">
-              <span>Total Dihemat:</span>
-              <strong>${Calculator.formatRupiah(summary.allSavings)}</strong>
-            </div>
-            <div class="flex justify-between text-slate-300 pt-1 border-t border-slate-800">
-              <span>Sisa Uang Tunai:</span>
-              <strong class="${summary.isOverbudget ? 'text-rose-400' : 'text-emerald-400'}">${Calculator.formatRupiah(summary.remainingBudget)}</strong>
-            </div>
-          </div>
 
-          <div class="grid grid-cols-2 gap-2">
-            <button id="modal-cancel-finish" class="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs touch-scale">
-              Batal
-            </button>
-            <button id="modal-confirm-finish" class="py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-900/40 touch-scale">
-              Ya, Simpan Belanja
-            </button>
-          </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button id="modal-cancel-finish" class="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs touch-scale flex items-center justify-center gap-1.5">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>Kembali & Kurangi</span>
+              </button>
+              <button id="modal-confirm-finish" class="py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs shadow-lg shadow-rose-950/60 touch-scale flex items-center justify-center gap-1.5">
+                <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                <span>Tetap Simpan Belanja</span>
+              </button>
+            </div>
+          ` : `
+            <div class="text-center mb-4">
+              <div class="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-2 border border-emerald-500/30">
+                <i data-lucide="check-check" class="w-7 h-7"></i>
+              </div>
+              <h3 class="text-base font-bold text-white">Selesaikan Belanja Bulan Ini?</h3>
+              <p class="text-xs text-slate-400 max-w-xs mx-auto">
+                Seluruh ${summary.totalItemsCount} barang belanjaan akan diarsipkan ke menu Riwayat dan harga saat ini akan dijadikan patokan bulan depan.
+              </p>
+            </div>
+
+            <div class="bg-slate-950/80 rounded-2xl p-3 border border-slate-800 text-xs space-y-2 mb-4">
+              <div class="flex justify-between text-slate-300">
+                <span>Total Pengeluaran:</span>
+                <strong class="text-white">${Calculator.formatRupiah(summary.grandTotal)}</strong>
+              </div>
+              <div class="flex justify-between text-emerald-400">
+                <span>Total Dihemat:</span>
+                <strong>${Calculator.formatRupiah(summary.allSavings)}</strong>
+              </div>
+              <div class="flex justify-between text-slate-300 pt-1 border-t border-slate-800">
+                <span>Sisa Uang Tunai:</span>
+                <strong class="text-emerald-400">${Calculator.formatRupiah(summary.remainingBudget)}</strong>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <button id="modal-cancel-finish" class="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs touch-scale">
+                Batal
+              </button>
+              <button id="modal-confirm-finish" class="py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-900/40 touch-scale">
+                Ya, Simpan Belanja
+              </button>
+            </div>
+          `}
         </div>
       </div>
     `;
@@ -1865,6 +1958,16 @@ const UI = {
         }
       }
     });
+
+    // Toggle Budget Safety Cap (hanya muncul di tab belanja)
+    const budgetHeader = document.getElementById('sticky-budget-header');
+    if (budgetHeader) {
+      if (tabId === 'belanja') {
+        budgetHeader.classList.remove('hidden');
+      } else {
+        budgetHeader.classList.add('hidden');
+      }
+    }
 
     // Re-render corresponding tab
     this.render();
@@ -2480,13 +2583,12 @@ const UI = {
       try {
         const uBudgetRaw = localStorage.getItem(`smartgrocery_${u.id}_budget`);
         if (uBudgetRaw) userBudgetLimit = JSON.parse(uBudgetRaw).monthlyLimit || 500000;
-      } catch (e) {}
+      } catch (e) { }
 
       return `
-        <div class="cursor-pointer rounded-2xl p-3.5 mb-2.5 transition-all duration-200 border ${
-          isCurrent 
-            ? 'bg-emerald-950/40 border-emerald-500/50 shadow-md shadow-emerald-950/50 ring-1 ring-emerald-500/30' 
-            : 'bg-slate-800/70 border-slate-700/60 hover:border-slate-500 hover:bg-slate-800'
+        <div class="cursor-pointer rounded-2xl p-3.5 mb-2.5 transition-all duration-200 border ${isCurrent
+          ? 'bg-emerald-950/40 border-emerald-500/50 shadow-md shadow-emerald-950/50 ring-1 ring-emerald-500/30'
+          : 'bg-slate-800/70 border-slate-700/60 hover:border-slate-500 hover:bg-slate-800'
         } card-switch-account flex items-center justify-between" data-id="${u.id}">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-2xl ${u.avatarBg || 'bg-slate-700'} text-white font-extrabold flex items-center justify-center text-sm shadow-md border border-white/10 shrink-0">
@@ -2957,29 +3059,6 @@ const UI = {
           </div>
         </div>
 
-        <!-- QUICK DEMO ACCESS (Bottom Footer Card) -->
-        <div class="mt-4 pt-3 border-t border-slate-800/80">
-          <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1.5">
-                <i data-lucide="zap" class="w-3.5 h-3.5 text-emerald-400"></i>
-                <span>Akses Akun Demo (1-Tap):</span>
-              </span>
-              <span class="text-[9px] text-emerald-400 font-mono font-bold">Siap Pakai</span>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <button type="button" class="btn-gatekeeper-quick-demo py-2 px-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-left border border-slate-700/80 touch-scale transition" data-user="user_rian">
-                <span class="text-xs font-bold text-white block">👤 Akun Utama</span>
-                <span class="text-[9px] text-emerald-400">Saldo Rp 500.000</span>
-              </button>
-              <button type="button" class="btn-gatekeeper-quick-demo py-2 px-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-left border border-slate-700/80 touch-scale transition" data-user="user_aditya">
-                <span class="text-xs font-bold text-white block">👤 Akun Sekunder</span>
-                <span class="text-[9px] text-indigo-400">Saldo Rp 750.000</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
       </div>
     `;
 
@@ -3270,7 +3349,7 @@ ALTER TABLE public.grocery_history ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Akses Publik grocery_cart" ON public.grocery_cart FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Akses Publik grocery_budget" ON public.grocery_budget FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Akses Publik grocery_history" ON public.grocery_history FOR ALL USING (true) WITH CHECK (true);`;
-      
+
       navigator.clipboard.writeText(sqlCode);
       this.showToast('✅ Script SQL berhasil disalin! Tempel di SQL Editor Supabase.');
     });
@@ -3352,9 +3431,16 @@ CREATE POLICY "Akses Publik grocery_history" ON public.grocery_history FOR ALL U
     const discount = Store.getCartDiscount();
     const summary = Calculator.calculateCartSummary(cart, budget.monthlyLimit, discount);
 
-    this.renderBudgetHeader(summary);
-
     const currentTab = this.activeTab || 'belanja';
+    const budgetHeader = document.getElementById('sticky-budget-header');
+
+    // Budget Safety Cap hanya dimunculkan di menu Belanja saja
+    if (currentTab === 'belanja') {
+      if (budgetHeader) budgetHeader.classList.remove('hidden');
+      this.renderBudgetHeader(summary);
+    } else {
+      if (budgetHeader) budgetHeader.classList.add('hidden');
+    }
 
     // Ensure corresponding tab content is visible and others hidden
     ['belanja', 'rencana', 'riwayat', 'anggaran'].forEach(id => {

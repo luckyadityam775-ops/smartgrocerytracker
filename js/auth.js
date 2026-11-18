@@ -48,8 +48,19 @@ const Auth = {
       });
     }
 
-    // Setiap buka aplikasi, SELALU masuk ke halaman login form terlebih dahulu!
-    this.setActiveUser(null);
+    // Check if explicitly logged out or requesting login page via URL parameter (?login=1)
+    const urlParams = (typeof window !== 'undefined' && window.location) ? new URLSearchParams(window.location.search) : null;
+    const explicitlyLoggedOut = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('smartgrocery_logged_out') === '1') || 
+                                (urlParams && (urlParams.get('auth') === 'login' || urlParams.get('login') === '1'));
+
+    if (explicitlyLoggedOut) {
+      this.setActiveUser(null);
+    }
+
+    // Clean up any legacy localStorage active user key so it never bypasses login across sessions
+    try {
+      localStorage.removeItem(this.KEYS.ACTIVE_USER);
+    } catch (e) {}
 
     // Asynchronously synchronize with server database file /api/users
     this.syncWithServerDatabase();
@@ -92,7 +103,7 @@ const Auth = {
 
   getCurrentUser() {
     try {
-      const data = localStorage.getItem(this.KEYS.ACTIVE_USER);
+      const data = (typeof sessionStorage !== 'undefined') ? sessionStorage.getItem(this.KEYS.ACTIVE_USER) : null;
       return data ? JSON.parse(data) : null;
     } catch (e) {
       return null;
@@ -114,9 +125,19 @@ const Auth = {
         avatarBg: user.avatarBg || 'bg-emerald-600',
         avatarLetter: (user.name || 'U').charAt(0).toUpperCase()
       };
-      localStorage.setItem(this.KEYS.ACTIVE_USER, JSON.stringify(safeUser));
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem(this.KEYS.ACTIVE_USER, JSON.stringify(safeUser));
+      }
+      try {
+        localStorage.removeItem(this.KEYS.ACTIVE_USER);
+      } catch (e) {}
     } else {
-      localStorage.removeItem(this.KEYS.ACTIVE_USER);
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem(this.KEYS.ACTIVE_USER);
+      }
+      try {
+        localStorage.removeItem(this.KEYS.ACTIVE_USER);
+      } catch (e) {}
     }
     this.notifyAuthChange(user);
   },

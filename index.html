@@ -103,16 +103,19 @@
         </div>
       </header>
 
-      <!-- STICKY TOP BUDGET SAFETY CAP HEADER -->
-      <div id="sticky-budget-header" class="shrink-0">
-        <!-- Reactive render from UI.renderBudgetHeader() -->
-      </div>
-
       <!-- MAIN SCROLLABLE VIEWS -->
       <main class="flex-1 min-h-0 overflow-y-auto pb-28">
         <!-- Tab 1: Belanja (Input & List Keranjang Aktif) [F-01, F-02, F-03, F-04] -->
         <section id="tab-content-belanja" class="w-full">
-          <!-- Rendered by UI.renderBelanjaTab() -->
+          <!-- BUDGET SAFETY CAP (Sticky / Mengambang di atas saat scroll belanja) [F-05] -->
+          <div id="sticky-budget-header" class="sticky top-0 z-30 w-full">
+            <!-- Reactive render from UI.renderBudgetHeader() -->
+          </div>
+
+          <!-- Body Konten Belanja (Toko, Tanggal, Item Troli, Total) -->
+          <div id="belanja-body-container" class="w-full">
+            <!-- Rendered by UI.renderBelanjaTab() -->
+          </div>
         </section>
 
         <!-- Tab 2: Rencana Pembelian (Wishlist & Planning Kebutuhan Belanja) -->
