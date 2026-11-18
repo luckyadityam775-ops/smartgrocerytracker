@@ -98,9 +98,6 @@ const SupabaseDB = {
       if (window.Store) {
         window.Store.applySnapshot(snapshot);
       }
-      if (window.UI) {
-        window.UI.showToast('✨ Sinkronisasi Realtime: Troli diperbarui dari perangkat lain');
-      }
     } finally {
       this.isApplyingRemote = false;
     }

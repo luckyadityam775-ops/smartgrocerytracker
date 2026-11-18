@@ -509,7 +509,6 @@ const UI = {
           storeName: storeSelect.value,
           date: datePicker.value
         });
-        this.showToast(`Sesi disetel: ${storeSelect.value}`);
       };
       storeSelect.addEventListener('change', handleSessionChange);
       datePicker.addEventListener('change', handleSessionChange);
@@ -1394,7 +1393,6 @@ const UI = {
       });
 
       closeModal();
-      this.showToast(`✓ Lokasi toko aktif: ${val}`);
       this.render();
     });
   },
@@ -1725,7 +1723,6 @@ const UI = {
         }
         isUserManuallyEditedLastPrice = false;
         updatePreviews();
-        this.showToast(`✓ Menggunakan harga resmi Lotte Mart: ${Calculator.formatRupiah(officialPrice)}`);
       });
     }
 
@@ -2485,25 +2482,25 @@ const UI = {
   },
 
   /**
-   * Floating Toast Message
+   * Floating Toast Message (discreetly positioned above bottom navigation)
    */
   showToast(message, type = 'success') {
     let toast = document.getElementById('app-toast');
     if (!toast) {
       toast = document.createElement('div');
       toast.id = 'app-toast';
-      toast.className = 'fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl text-xs font-bold shadow-2xl flex items-center gap-2 transition-all duration-300 pointer-events-none transform -translate-y-4 opacity-0 max-w-[380px] text-center';
+      toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl text-xs font-bold shadow-2xl flex items-center gap-2 transition-all duration-300 pointer-events-none transform translate-y-4 opacity-0 max-w-[360px] text-center';
       document.body.appendChild(toast);
     }
 
     const bgClass = type === 'success' ? 'bg-emerald-600 text-white border border-emerald-400/40 shadow-emerald-950/60' : 'bg-rose-600 text-white border border-rose-400/40 shadow-rose-950/60';
-    toast.className = `fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl text-xs font-bold shadow-2xl flex items-center gap-2 transition-all duration-300 pointer-events-none transform translate-y-0 opacity-100 max-w-[380px] ${bgClass}`;
+    toast.className = `fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl text-xs font-bold shadow-2xl flex items-center gap-2 transition-all duration-300 pointer-events-none transform translate-y-0 opacity-100 max-w-[360px] ${bgClass}`;
     toast.innerText = message;
 
     clearTimeout(this.toastTimeout);
     this.toastTimeout = setTimeout(() => {
-      toast.className = toast.className.replace('translate-y-0 opacity-100', '-translate-y-4 opacity-0');
-    }, 2500);
+      toast.className = toast.className.replace('translate-y-0 opacity-100', 'translate-y-4 opacity-0');
+    }, 2000);
   },
 
   /**

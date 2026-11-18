@@ -70,10 +70,6 @@ function bootApp() {
         if (snapshot.source !== 'local') {
           if (window.UI && typeof window.UI.render === 'function') {
             window.UI.render();
-            const sourceLabel = snapshot.source === 'firestore' ? 'Cloud Firestore' : 'Multi-Tab Realtime';
-            if (typeof window.UI.showToast === 'function') {
-              window.UI.showToast(`⚡ Sinkronisasi ${sourceLabel}: Data diperbarui seketika!`);
-            }
           }
         }
       });
