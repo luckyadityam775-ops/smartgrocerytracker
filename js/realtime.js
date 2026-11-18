@@ -73,8 +73,10 @@
     },
 
     lastServerTimestamp: 0,
+    lanSyncActive: true,
 
     async pollServerSync() {
+      if (!this.lanSyncActive) return;
       try {
         const resp = await fetch('./api/sync');
         if (resp.ok) {
@@ -85,8 +87,12 @@
               this.handleIncomingMessage(snapshot, 'lan_server');
             }
           }
+        } else {
+          this.lanSyncActive = false;
         }
-      } catch (e) {}
+      } catch (e) {
+        this.lanSyncActive = false;
+      }
     },
 
     /**

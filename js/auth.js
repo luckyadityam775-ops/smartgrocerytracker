@@ -144,7 +144,8 @@ const Auth = {
         email: user.email,
         role: user.role || 'Pengguna',
         avatarBg: user.avatarBg || 'bg-emerald-600',
-        avatarLetter: (user.name || 'U').charAt(0).toUpperCase()
+        avatarLetter: (user.name || 'U').charAt(0).toUpperCase(),
+        avatarUrl: user.avatarUrl || ''
       };
       if (typeof sessionStorage !== 'undefined') {
         sessionStorage.setItem(this.KEYS.ACTIVE_USER, JSON.stringify(safeUser));
@@ -354,7 +355,7 @@ const Auth = {
     if (!email) return;
 
     const fullName = (gUser.user_metadata && (gUser.user_metadata.full_name || gUser.user_metadata.name)) || email.split('@')[0];
-    const avatarUrl = (gUser.user_metadata && gUser.user_metadata.avatar_url) || '';
+    const avatarUrl = (gUser.user_metadata && (gUser.user_metadata.avatar_url || gUser.user_metadata.picture)) || '';
 
     // Create a stable, deterministic user ID from Google account so it is IDENTICAL across all devices!
     const stableUserId = 'user_google_' + email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
@@ -363,6 +364,10 @@ const Auth = {
     let existing = users.find(u => (u.email && u.email.toLowerCase() === email.toLowerCase()) || u.id === stableUserId);
 
     if (existing) {
+      if (avatarUrl && existing.avatarUrl !== avatarUrl) {
+        existing.avatarUrl = avatarUrl;
+        this.saveUsers(users);
+      }
       if (existing.id !== stableUserId) {
         const oldId = existing.id;
         ['cart', 'budget', 'catalog', 'history', 'cart_discount'].forEach(k => {

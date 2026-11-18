@@ -7,6 +7,8 @@ const SupabaseDB = {
   isReady: false,
   realtimeChannel: null,
   isApplyingRemote: false,
+  lastLocalWriteTime: 0,
+  syncDebounceTimers: {},
 
   /**
    * Initialize Supabase Database synchronization
@@ -109,6 +111,9 @@ const SupabaseDB = {
    */
   handleCartRemoteChange(payload) {
     if (this.isApplyingRemote) return;
+    // Skip own postgres echo if this client just wrote locally
+    if (Date.now() - this.lastLocalWriteTime < 2500) return;
+
     const user = window.Auth ? window.Auth.getCurrentUser() : null;
     const currentUserId = user ? user.id : 'user_rian';
 
@@ -130,6 +135,9 @@ const SupabaseDB = {
    */
   handleBudgetRemoteChange(payload) {
     if (this.isApplyingRemote) return;
+    // Skip own postgres echo if this client just wrote locally
+    if (Date.now() - this.lastLocalWriteTime < 2500) return;
+
     const user = window.Auth ? window.Auth.getCurrentUser() : null;
     const currentUserId = user ? user.id : 'user_rian';
 
@@ -274,10 +282,12 @@ const SupabaseDB = {
     if (!window.supabaseClient || this.isApplyingRemote) return;
     if (!snapshot || !snapshot.type) return;
 
+    this.lastLocalWriteTime = Date.now();
+
     const user = window.Auth ? window.Auth.getCurrentUser() : null;
     const userId = user ? user.id : (snapshot.userId || 'user_rian');
 
-    // 1. Broadcast instant WebSocket message to all other devices on the channel
+    // 1. Broadcast instant WebSocket message to peer devices immediately (<50ms, zero lag!)
     if (this.realtimeChannel) {
       try {
         this.realtimeChannel.send({
@@ -294,19 +304,26 @@ const SupabaseDB = {
       }
     }
 
-    // 2. Persist to PostgreSQL tables
-    try {
-      if (snapshot.type === 'cart' && Array.isArray(snapshot.data)) {
-        await this.syncCartToSupabase(snapshot.data, userId);
-      } else if (snapshot.type === 'budget' && snapshot.data) {
-        await this.syncBudgetToSupabase(snapshot.data, userId);
-      } else if (snapshot.type === 'history' && Array.isArray(snapshot.data) && snapshot.data.length > 0) {
-        const latestHistory = snapshot.data[0];
-        await this.syncHistoryToSupabase(latestHistory, userId);
-      }
-    } catch (e) {
-      console.warn('[SupabaseDB] Gagal sync snapshot ke Supabase:', e);
+    // 2. Debounce heavy PostgreSQL table writes (350ms) to ensure butter-smooth 60fps UI tapping
+    const key = snapshot.type;
+    if (this.syncDebounceTimers[key]) {
+      clearTimeout(this.syncDebounceTimers[key]);
     }
+
+    this.syncDebounceTimers[key] = setTimeout(async () => {
+      try {
+        if (snapshot.type === 'cart' && Array.isArray(snapshot.data)) {
+          await this.syncCartToSupabase(snapshot.data, userId);
+        } else if (snapshot.type === 'budget' && snapshot.data) {
+          await this.syncBudgetToSupabase(snapshot.data, userId);
+        } else if (snapshot.type === 'history' && Array.isArray(snapshot.data) && snapshot.data.length > 0) {
+          const latestHistory = snapshot.data[0];
+          await this.syncHistoryToSupabase(latestHistory, userId);
+        }
+      } catch (e) {
+        console.warn('[SupabaseDB] Gagal sync snapshot ke Supabase:', e);
+      }
+    }, 350);
   },
 
   /**
