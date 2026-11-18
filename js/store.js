@@ -383,8 +383,22 @@ const Store = {
       "Januari", "Februari", "Maret", "April", "Mei", "Juni",
       "Juli", "Agustus", "September", "Oktober", "November", "Desember"
     ];
-    const sessionMonthName = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
-    const dateFormatted = now.toISOString().split('T')[0];
+
+    const sessionInfo = this.getSessionInfo ? this.getSessionInfo() : null;
+    let dateFormatted = now.toISOString().split('T')[0];
+    let sessionMonthName = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+
+    if (sessionInfo && sessionInfo.date) {
+      dateFormatted = sessionInfo.date;
+      const parts = sessionInfo.date.split('-');
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        if (!isNaN(y) && !isNaN(m) && m >= 0 && m < 12) {
+          sessionMonthName = `${monthNames[m]} ${y}`;
+        }
+      }
+    }
 
     const sessionRecord = {
       id: 'session_' + Date.now(),

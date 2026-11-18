@@ -888,21 +888,81 @@ const UI = {
 
     const history = Store.getHistory();
 
-    // Generate lightweight responsive SVG Bar Chart
+    // Generate lightweight responsive SVG Bar Chart (Agregasi per 1 Bulan Kalender)
     let chartHtml = '';
     if (history.length > 0) {
-      const chartData = [...history].reverse().slice(-4); // Last 4 sessions
-      const maxAmount = Math.max(...chartData.map(h => h.totalAmount), 500000);
+      const monthNamesIndo = [
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+      ];
 
-      const barsHtml = chartData.map((session, idx) => {
-        const heightPercent = Math.max(15, Math.round((session.totalAmount / maxAmount) * 100));
+      // Kelompokkan seluruh transaksi belanja per bulan kalender yang sama
+      const monthGroups = {};
+      history.forEach(session => {
+        let key = '';
+        let shortLabel = '';
+        let sortOrder = 0;
+
+        if (session.date && typeof session.date === 'string') {
+          const parts = session.date.split('-');
+          if (parts.length >= 2) {
+            const y = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10);
+            if (!isNaN(y) && !isNaN(m) && m >= 1 && m <= 12) {
+              key = `${y}-${String(m).padStart(2, '0')}`;
+              shortLabel = monthNamesIndo[m - 1];
+              sortOrder = y * 100 + m;
+            }
+          }
+        }
+
+        if (!key && session.monthName) {
+          const mParts = session.monthName.trim().split(' ');
+          const mIdx = monthNamesIndo.indexOf(mParts[0]);
+          const y = parseInt(mParts[1], 10) || 2026;
+          const m = mIdx >= 0 ? mIdx + 1 : 1;
+          key = `${y}-${String(m).padStart(2, '0')}`;
+          shortLabel = mParts[0];
+          sortOrder = y * 100 + m;
+        }
+
+        if (!key) {
+          key = 'current';
+          shortLabel = 'Bulan Ini';
+          sortOrder = 999999;
+        }
+
+        if (!monthGroups[key]) {
+          monthGroups[key] = {
+            key,
+            label: shortLabel,
+            fullLabel: session.monthName || shortLabel,
+            sortOrder,
+            totalAmount: 0,
+            purchaseCount: 0
+          };
+        }
+
+        monthGroups[key].totalAmount += (Number(session.totalAmount) || 0);
+        monthGroups[key].purchaseCount += 1;
+      });
+
+      // Urutkan kronologis dari bulan terlama ke bulan terkini
+      const monthlyData = Object.values(monthGroups).sort((a, b) => a.sortOrder - b.sortOrder);
+      const chartData = monthlyData.slice(-5);
+      const maxAmount = Math.max(...chartData.map(h => h.totalAmount), 300000);
+      const containerJustify = chartData.length <= 2 ? 'justify-center' : 'justify-around';
+
+      const barsHtml = chartData.map((month) => {
+        const heightPercent = Math.max(16, Math.min(100, Math.round((month.totalAmount / maxAmount) * 100)));
         return `
-          <div class="flex-1 flex flex-col items-center gap-2">
-            <span class="text-[10px] font-bold text-slate-300">${Calculator.formatRupiah(session.totalAmount).replace('Rp ', '')}</span>
+          <div class="flex-1 max-w-[90px] flex flex-col items-center gap-1.5">
+            <span class="text-[10px] font-bold text-slate-200">${Calculator.formatRupiah(month.totalAmount).replace('Rp ', '')}</span>
             <div class="w-full bg-slate-800 rounded-t-xl overflow-hidden flex items-end justify-center" style="height: 110px;">
-              <div class="w-8 sm:w-10 bg-gradient-to-t from-emerald-600 to-teal-400 rounded-t-lg transition-all duration-500" style="height: ${heightPercent}%;"></div>
+              <div class="w-8 sm:w-10 bg-gradient-to-t from-emerald-600 to-teal-400 rounded-t-lg transition-all duration-500 shadow-md shadow-emerald-950/40" style="height: ${heightPercent}%;"></div>
             </div>
-            <span class="text-[10px] font-semibold text-slate-400 text-center truncate max-w-[65px]">${session.monthName.split(' ')[0]}</span>
+            <span class="text-[10px] font-semibold text-slate-300 text-center truncate max-w-[65px]">${month.label}</span>
+            ${month.purchaseCount > 1 ? `<span class="text-[9px] text-emerald-400/90 -mt-1 font-semibold">(${month.purchaseCount}x beli)</span>` : ''}
           </div>
         `;
       }).join('');
@@ -914,9 +974,9 @@ const UI = {
               <i data-lucide="bar-chart-2" class="w-4 h-4 text-emerald-400"></i>
               <span>Trend Pengeluaran Bulanan</span>
             </div>
-            <span class="text-[10px] text-slate-400">Total ${history.length} Catatan</span>
+            <span class="text-[10px] text-slate-400">Total ${history.length} Belanja (${chartData.length} Bulan)</span>
           </div>
-          <div class="flex items-end justify-between gap-3 pt-2 px-1">
+          <div class="flex items-end ${containerJustify} gap-4 pt-2 px-1">
             ${barsHtml}
           </div>
         </div>
