@@ -3,6 +3,10 @@
  * Compares current unit price against historical/last month's price in real-time.
  */
 
+if (typeof Calculator === 'undefined' && typeof require !== 'undefined') {
+  var { Calculator } = require('./calculator.js');
+}
+
 const Comparator = {
   /**
    * Compare current unit price with last month's unit price
@@ -107,4 +111,9 @@ const Comparator = {
   }
 };
 
-window.Comparator = Comparator;
+if (typeof window !== 'undefined') {
+  window.Comparator = Comparator;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { Comparator };
+}
