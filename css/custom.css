@@ -140,19 +140,23 @@ main {
   animation: fadeIn 0.2s ease-out forwards;
 }
 
-/* Stepper button typography */
+/* Stepper button typography & Thumb-Friendly Touch Targets (Min 44x44px - SRS UX) */
 .stepper-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  min-width: 44px;
+  min-height: 44px;
+  width: 44px;
+  height: 44px;
   border-radius: 12px;
   background: #334155;
   color: #ffffff;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   transition: all 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .stepper-btn:hover {
   background: #475569;
@@ -160,6 +164,14 @@ main {
 .stepper-btn:active {
   transform: scale(0.9);
   background: #64748b;
+}
+
+.touch-target-44 {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Budget Gauge Progress Bar Glow */

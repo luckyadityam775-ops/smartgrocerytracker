@@ -349,6 +349,89 @@
         );
       }
 
+      // ==========================================
+      // SKENARIO KHUSUS DAILY TEST 2 (DT2) - SEKOLAH MUTIARA BANGSA 2
+      // ==========================================
+      // 1. [DT2 F-01] Validasi Form Input & Penolakan Harga Negatif / Kosong
+      const invalidEmpty = Store.addCartItem({ name: "", currentPrice: 50000 });
+      const invalidMinus = Store.addCartItem({ name: "Barang Rusak", currentPrice: -15000 });
+      const validRojolele = Store.addCartItem({
+        name: "Beras Rojolele",
+        category: "Bahan Pokok",
+        unit: "karung/5kg",
+        qty: 1,
+        currentPrice: 74000,
+        lastPrice: 68000
+      });
+      const isDt2F01Ok = invalidEmpty === null && invalidMinus === null && validRojolele !== null && validRojolele.name === "Beras Rojolele";
+      recordTest(
+        "[DT2 F-01] Validasi Form Input Sesi Belanja & Pencegahan Nilai Minus",
+        "DT2 Skenario 1",
+        isDt2F01Ok,
+        `Sistem sukses menolak input tanpa nama atau harga negatif (-Rp 15.000), dan sukses memasukkan Beras Rojolele (Bahan Pokok, karung/5kg, Rp 74.000).`
+      );
+
+      // 2. [DT2 F-02] Reaktivitas Kuantitas Minyak Goreng 2L (1 ke 3 = Rp 129.000)
+      const minyakRowInit = Calculator.calculateItemRow({ name: "Minyak Goreng 2L", qty: 1, currentPrice: 43000 });
+      const minyakRowTripled = Calculator.calculateItemRow({ name: "Minyak Goreng 2L", qty: 3, currentPrice: 43000 });
+      const isDt2F02Ok = minyakRowInit.subtotalFinal === 43000 && minyakRowTripled.subtotalFinal === 129000;
+      recordTest(
+        "[DT2 F-02] Penggandaan Kuantitas Otomatis Tanpa Delay (Minyak Goreng 2L)",
+        "DT2 Skenario 2",
+        isDt2F02Ok,
+        `Qty 1 = ${Calculator.formatRupiah(minyakRowInit.subtotalFinal)} → Qty 3 = ${Calculator.formatRupiah(minyakRowTripled.subtotalFinal)} seketika tanpa reload.`
+      );
+
+      // 3. [DT2 F-03] Presisi Diskon Kompound Bertingkat Wajan 50% + 20%
+      const sabunDt2 = Calculator.calculateItemDiscount(20000, "single", 25);
+      const wajanDt2 = Calculator.calculateItemDiscount(100000, "tiered", 50, 20);
+      const isDt2F03Ok = sabunDt2.finalPrice === 15000 && wajanDt2.finalPrice === 40000 && wajanDt2.savingsPerUnit === 60000;
+      recordTest(
+        "[DT2 F-03] Kalkulasi Diskon Kompound Bertingkat (Wajan 50% + 20%)",
+        "DT2 Skenario 3",
+        isDt2F03Ok,
+        `Sabun Rp 20.000 (disc 25%) = ${Calculator.formatRupiah(sabunDt2.finalPrice)} | Wajan Rp 100.000 (50%+20%): Tahap 1 = Rp 50.000 → Tahap 2 = ${Calculator.formatRupiah(wajanDt2.finalPrice)} (Hemat Rp 60.000, BUKAN 70%!)`
+      );
+
+      // 4. [DT2 F-04] Indikator Komparasi 3 Kondisi Fluktuasi Lotte Mart Puri Indah
+      const compBeras = Comparator.compare(74000, 68000);
+      const compTelur = Comparator.compare(28000, 32000);
+      const compGaram = Comparator.compare(5000, 5000);
+      const isDt2F04Ok = compBeras.arrow === '↑' && compBeras.diffAmount === 6000 &&
+                         compTelur.arrow === '↓' && compTelur.diffAmount === -4000 &&
+                         compGaram.arrow === '=' && compGaram.diffAmount === 0;
+      recordTest(
+        "[DT2 F-04] Komparator Fluktuasi Harga Realtime (3 Kondisi Toko)",
+        "DT2 Skenario 4",
+        isDt2F04Ok,
+        `Beras: ${compBeras.arrow} ${compBeras.label} (Merah Naik) | Telur: ${compTelur.arrow} ${compTelur.label} (Hijau Turun) | Garam: ${compGaram.arrow} ${compGaram.label} (Abu-abu Stabil)`
+      );
+
+      // 5. [DT2 F-05] Budget Safety Cap (Limit Rp 100.000 → Rp 95.000 Kuning → Rp 110.000 Merah)
+      const cap95k = Calculator.calculateCartSummary([{ currentPrice: 95000, qty: 1 }], 100000);
+      const cap110k = Calculator.calculateCartSummary([{ currentPrice: 110000, qty: 1 }], 100000);
+      const isDt2F05Ok = cap95k.safetyStatus === 'warning' &&
+                         cap110k.safetyStatus === 'danger' &&
+                         cap110k.isOverbudget &&
+                         cap110k.statusLabel.includes("Total belanja melebihi batas saldo dompet");
+      recordTest(
+        "[DT2 F-05] Sistem Pengendali Anggaran (Peringatan Waspada & Banner Bahaya)",
+        "DT2 Skenario 5",
+        isDt2F05Ok,
+        `Limit Rp 100.000: Belanja Rp 95.000 (95% ≥ 90%) = Status Kuning Waspada | Belanja Rp 110.000 (>100%) = Status Merah Bahaya ("${cap110k.statusLabel}")`
+      );
+
+      // 6. [DT2 F-06A] Persistensi Lokal Sesi Belanja (Toko & Tanggal & Limit)
+      Store.saveSessionInfo({ storeName: "Lotte Mart Grocery - Puri Indah", date: "2026-10-26" });
+      const persistedSession = Store.getSessionInfo();
+      const isDt2F06AOk = persistedSession.storeName === "Lotte Mart Grocery - Puri Indah" && persistedSession.date === "2026-10-26";
+      recordTest(
+        "[DT2 F-06A] Persistensi Data Lokal Sesi Belanja Tahan Reload F5",
+        "DT2 Skenario 6",
+        isDt2F06AOk,
+        `Toko "${persistedSession.storeName}" dan tanggal "${persistedSession.date}" tersimpan aman di LocalStorage dan siap tahan reload browser F5.`
+      );
+
       // Switch back to Rian
       Auth.switchAccount("user_rian");
 

@@ -60,6 +60,42 @@ while ($true) {
             continue
         }
 
+        # ----------------- REALTIME LAN SYNC ENDPOINT: /api/sync -----------------
+        if ($rawPath -eq "api/sync" -or $rawPath -eq "api/sync/") {
+            $dbSyncFile = Join-Path $dataDir "sync_state.json"
+            if ($method -eq "GET") {
+                $content = if (Test-Path $dbSyncFile) { [System.IO.File]::ReadAllText($dbSyncFile, [System.Text.Encoding]::UTF8) } else { "{}" }
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
+                $headerText = "HTTP/1.1 200 OK`r`nContent-Type: application/json; charset=utf-8`r`nContent-Length: $($bytes.Length)`r`nAccess-Control-Allow-Origin: *`r`nConnection: close`r`n`r`n"
+                $headerBytes = [System.Text.Encoding]::UTF8.GetBytes($headerText)
+                $stream.Write($headerBytes, 0, $headerBytes.Length)
+                $stream.Write($bytes, 0, $bytes.Length)
+                $stream.Flush()
+                $client.Close()
+                continue
+            }
+            elseif ($method -eq "POST") {
+                $bodyChars = New-Object char[] $contentLength
+                $readCount = 0
+                while ($readCount -lt $contentLength) {
+                    $r = $reader.Read($bodyChars, $readCount, $contentLength - $readCount)
+                    if ($r -le 0) { break }
+                    $readCount += $r
+                }
+                $bodyString = [string]::new($bodyChars, 0, $readCount)
+                [System.IO.File]::WriteAllText($dbSyncFile, $bodyString, [System.Text.Encoding]::UTF8)
+                $respJson = '{"success":true}'
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes($respJson)
+                $headerText = "HTTP/1.1 200 OK`r`nContent-Type: application/json; charset=utf-8`r`nContent-Length: $($bytes.Length)`r`nAccess-Control-Allow-Origin: *`r`nConnection: close`r`n`r`n"
+                $headerBytes = [System.Text.Encoding]::UTF8.GetBytes($headerText)
+                $stream.Write($headerBytes, 0, $headerBytes.Length)
+                $stream.Write($bytes, 0, $bytes.Length)
+                $stream.Flush()
+                $client.Close()
+                continue
+            }
+        }
+
         # ----------------- DATABASE API ENDPOINT: /api/users -----------------
         if ($rawPath -eq "api/users" -or $rawPath -eq "api/users/") {
             if ($method -eq "GET") {

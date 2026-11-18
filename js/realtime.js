@@ -62,7 +62,31 @@
       // 3. Initialize Firebase Firestore if configured
       this.initFirestoreIfConfigured();
 
+      // 4. Start background LAN sync poller (for zero-config WiFi lab sync)
+      if (typeof fetch === 'function' && typeof window !== 'undefined' && window.location && window.location.protocol && window.location.protocol.startsWith('http')) {
+        setInterval(() => {
+          this.pollServerSync();
+        }, 1200);
+      }
+
       console.log(`[Realtime] Engine ready (Client ID: ${CLIENT_ID})`);
+    },
+
+    lastServerTimestamp: 0,
+
+    async pollServerSync() {
+      try {
+        const resp = await fetch('./api/sync');
+        if (resp.ok) {
+          const snapshot = await resp.json();
+          if (snapshot && snapshot.timestamp && snapshot.originClientId !== CLIENT_ID) {
+            if (!this.lastServerTimestamp || snapshot.timestamp > this.lastServerTimestamp) {
+              this.lastServerTimestamp = snapshot.timestamp;
+              this.handleIncomingMessage(snapshot, 'lan_server');
+            }
+          }
+        }
+      } catch (e) {}
     },
 
     /**
@@ -110,6 +134,17 @@
       // 3. Sync to Firebase Firestore if connected
       if (isFirestoreActive && firestoreDb) {
         this.syncToFirestore(snapshot);
+      }
+
+      // 4. Sync to local LAN server endpoint (/api/sync)
+      if (typeof fetch === 'function' && typeof window !== 'undefined' && window.location.protocol && window.location.protocol.startsWith('http')) {
+        try {
+          fetch('./api/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(snapshot)
+          }).catch(() => {});
+        } catch (e) {}
       }
     },
 
@@ -293,6 +328,31 @@
         });
         firestoreUnsubscribers.push(unsubBudget);
 
+        // 3. Listen on shopping session document snapshot (Store & Date)
+        const sessionDocRef = firestoreDb.collection('smartgrocery_users').doc(uid).collection('state').doc('session');
+        const unsubSession = sessionDocRef.onSnapshot((docSnapshot) => {
+          if (docSnapshot.exists) {
+            const data = docSnapshot.data();
+            if (data && data.originClientId !== CLIENT_ID) {
+              const snapshot = {
+                type: 'session',
+                data: data.session || {},
+                source: 'firestore',
+                originClientId: data.originClientId || 'remote_firestore',
+                userId: uid,
+                timestamp: Date.now()
+              };
+              if (window.Store && typeof window.Store.applySnapshot === 'function') {
+                window.Store.applySnapshot(snapshot);
+              }
+              this.dispatchSnapshot(snapshot);
+            }
+          }
+        }, (err) => {
+          console.warn('[Realtime Firestore Session Error]:', err);
+        });
+        firestoreUnsubscribers.push(unsubSession);
+
       } catch (e) {
         console.warn('[Realtime] Error attaching Firestore onSnapshot listeners:', e);
       }
@@ -320,6 +380,13 @@
           const budget = window.Store ? window.Store.getBudgetSettings() : {};
           firestoreDb.collection('smartgrocery_users').doc(uid).collection('state').doc('budget').set({
             settings: budget,
+            originClientId: CLIENT_ID,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+        } else if (snapshot.type === 'session') {
+          const session = window.Store ? window.Store.getSessionInfo() : {};
+          firestoreDb.collection('smartgrocery_users').doc(uid).collection('state').doc('session').set({
+            session: session,
             originClientId: CLIENT_ID,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           }, { merge: true });

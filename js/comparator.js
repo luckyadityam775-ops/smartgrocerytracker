@@ -51,7 +51,7 @@ const Comparator = {
       // Lebih Mahal (Merah)
       return {
         type: 'higher',
-        label: `Naik ${Calculator.formatRupiah(diff)} (+${diffPercent}%)`,
+        label: `+${Calculator.formatRupiah(diff)} (+${diffPercent}%)`,
         arrow: '↑',
         icon: 'trending-up',
         diffAmount: diff,
@@ -66,7 +66,7 @@ const Comparator = {
       const absDiff = Math.abs(diff);
       return {
         type: 'lower',
-        label: `Turun ${Calculator.formatRupiah(absDiff)} (-${diffPercent}%)`,
+        label: `-${Calculator.formatRupiah(absDiff)} (-${diffPercent}%)`,
         arrow: '↓',
         icon: 'trending-down',
         diffAmount: -absDiff,
@@ -80,7 +80,7 @@ const Comparator = {
       // Sama persis / Stabil (Abu-abu)
       return {
         type: 'equal',
-        label: 'Harga Stabil (=)',
+        label: 'Harga Stabil',
         arrow: '=',
         icon: 'minus',
         diffAmount: 0,
@@ -99,8 +99,8 @@ const Comparator = {
   renderBadgeHtml(comparison) {
     if (!comparison) return '';
     return `
-      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${comparison.badgeClass}">
-        <span>${comparison.arrow}</span>
+      <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${comparison.badgeClass}">
+        <span class="text-sm font-extrabold leading-none">${comparison.arrow}</span>
         <span>${comparison.label}</span>
       </span>
     `;

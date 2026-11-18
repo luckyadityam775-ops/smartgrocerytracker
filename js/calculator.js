@@ -159,20 +159,20 @@ const Calculator = {
     const budgetUsagePercent = parsedBudget > 0 ? (grandTotal / parsedBudget) * 100 : (grandTotal > 0 ? 100 : 0);
 
     // Safety Cap Status
-    // < 80%: Safe (Hijau/Biru)
-    // 80% - 95%: Warning (Kuning)
-    // > 95%: Danger / Overbudget (Merah)
+    // < 80%: Safe (Hijau)
+    // 80% - 100%: Warning / Waspada (Kuning)
+    // > 100% / Overbudget: Danger (Merah Tegas)
     let safetyStatus = "safe";
     let statusLabel = "Aman: Belanjaan Terkendali";
     let statusColor = "emerald";
 
-    if (budgetUsagePercent > 95 || remainingBudget < 0) {
+    if (remainingBudget < 0 || budgetUsagePercent > 100) {
       safetyStatus = "danger";
-      statusLabel = remainingBudget < 0 ? "BAHAYA: Saldo Minus!" : "WASPADA TINGGI: Hampir Habis!";
+      statusLabel = "Total belanja melebihi batas saldo dompet! Kurangi kuantitas atau batalkan barang sekunder.";
       statusColor = "rose";
     } else if (budgetUsagePercent >= 80) {
       safetyStatus = "warning";
-      statusLabel = "PERHATIAN: Mendekati Batas Saldo!";
+      statusLabel = "Peringatan Waspada: Mendekati Batas Saldo Dompet!";
       statusColor = "amber";
     }
 

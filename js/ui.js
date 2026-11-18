@@ -49,44 +49,47 @@ const UI = {
       this.hapticTriggered = false;
     }
 
-    // Colors and visual alerts
+    // Colors and visual alerts [SRS F-05]
     let barColor = 'bg-emerald-500';
     let badgeBg = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
     let balanceTextColor = 'text-emerald-400';
     let headerBorder = 'border-slate-800';
+    let containerBg = 'glass-panel';
     let shakeClass = '';
 
     if (safetyStatus === 'warning') {
       barColor = 'bg-amber-500';
-      badgeBg = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+      badgeBg = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
       balanceTextColor = 'text-amber-400';
-      headerBorder = 'border-amber-500/40';
+      headerBorder = 'border-amber-500/60';
+      containerBg = 'bg-slate-900/95';
     } else if (safetyStatus === 'danger') {
       barColor = 'bg-rose-500 animate-pulse';
-      badgeBg = 'bg-rose-500/20 text-rose-300 border-rose-500/40';
-      balanceTextColor = 'text-rose-400';
-      headerBorder = 'border-rose-500/60';
+      badgeBg = 'bg-rose-500/30 text-rose-200 border-rose-500/50';
+      balanceTextColor = 'text-rose-400 font-extrabold';
+      headerBorder = 'border-rose-500';
+      containerBg = 'bg-rose-950/95 shadow-2xl shadow-rose-950/80';
       shakeClass = 'animate-shake';
     }
 
-    container.className = `sticky top-0 z-30 glass-panel border-b ${headerBorder} px-4 py-3 transition-all duration-300 ${shakeClass}`;
+    container.className = `sticky top-0 z-30 ${containerBg} border-b ${headerBorder} px-4 py-3 transition-all duration-300 ${shakeClass}`;
 
     container.innerHTML = `
       <div class="flex items-center justify-between gap-2 mb-2">
         <div class="flex items-center gap-1.5">
-          <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400">
-            <i data-lucide="shield-check" class="w-4 h-4"></i>
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg ${safetyStatus === 'danger' ? 'bg-rose-500 text-white' : safetyStatus === 'warning' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'}">
+            <i data-lucide="${safetyStatus === 'danger' ? 'alert-triangle' : 'shield-check'}" class="w-4 h-4"></i>
           </span>
           <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">Budget Safety Cap</span>
         </div>
-        <button id="btn-quick-edit-budget" class="text-xs px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 hover:text-white flex items-center gap-1 touch-scale">
-          <i data-lucide="edit-3" class="w-3 h-3"></i>
+        <button id="btn-quick-edit-budget" class="text-xs px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 hover:text-white flex items-center gap-1 touch-scale border border-slate-700">
+          <i data-lucide="edit-3" class="w-3 h-3 text-emerald-400"></i>
           <span>Ubah Batas</span>
         </button>
       </div>
 
       <!-- Main Balance Equation [Batas Saldo] - [Total Belanja] = [Sisa Saldo] -->
-      <div class="grid grid-cols-3 gap-1.5 text-center bg-slate-900/90 rounded-2xl p-2.5 border border-slate-800/80 shadow-inner">
+      <div class="grid grid-cols-3 gap-1.5 text-center bg-slate-900/90 rounded-2xl p-2.5 border ${safetyStatus === 'danger' ? 'border-rose-500/50' : 'border-slate-800/80'} shadow-inner">
         <div class="flex flex-col items-center justify-center p-1">
           <span class="text-[10px] text-slate-400 uppercase font-medium">Batas Saldo</span>
           <span class="text-xs font-bold text-slate-200 mt-0.5 truncate max-w-full">${Calculator.formatRupiah(budgetLimit)}</span>
@@ -101,12 +104,12 @@ const UI = {
         </div>
       </div>
 
-      <!-- Visual Safety Cap Bar -->
+      <!-- Visual Safety Cap Bar & Indicator -->
       <div class="mt-2.5">
         <div class="flex items-center justify-between text-[11px] mb-1">
           <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-semibold ${badgeBg}">
-            <span class="w-1.5 h-1.5 rounded-full ${barColor}"></span>
-            <span>${statusLabel}</span>
+            <span class="w-2 h-2 rounded-full ${barColor}"></span>
+            <span>${safetyStatus === 'danger' ? 'Bahaya: Melebihi Saldo (>100%)' : safetyStatus === 'warning' ? 'Peringatan Waspada (≥90%)' : 'Aman (Belanja Terkendali)'}</span>
           </div>
           <span class="font-bold text-slate-300 text-[11px]">${budgetUsagePercent}% Terpakai</span>
         </div>
@@ -122,10 +125,22 @@ const UI = {
           </div>
         ` : ''}
 
+        <!-- Warning Bar (≥90% - SRS F-05) -->
+        ${safetyStatus === 'warning' ? `
+          <div id="warning-budget-banner" class="mt-2 p-2 bg-amber-500/20 border border-amber-500/40 rounded-xl flex items-center gap-2 text-amber-200 text-xs">
+            <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0 text-amber-400"></i>
+            <span class="text-[11px] font-semibold leading-tight">Peringatan Waspada: Total belanja mendekati batas saldo dompet (≥90%)!</span>
+          </div>
+        ` : ''}
+
+        <!-- Danger Banner (>100% - SRS F-05 Wajib Menyala Merah Tegas) -->
         ${safetyStatus === 'danger' ? `
-          <div class="mt-1.5 p-1.5 bg-rose-500/20 border border-rose-500/40 rounded-lg flex items-center gap-2 text-rose-200 text-xs">
-            <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0 text-rose-400 animate-bounce"></i>
-            <span class="text-[11px] leading-tight font-medium">Kurangi beberapa barang dari troli sebelum ke meja kasir!</span>
+          <div id="danger-budget-banner" class="mt-2 p-2.5 bg-rose-600 text-white rounded-xl flex items-start gap-2 shadow-lg shadow-rose-900/50 animate-pulse-danger">
+            <i data-lucide="alert-octagon" class="w-5 h-5 shrink-0 text-white mt-0.5"></i>
+            <div class="flex-1">
+              <span class="text-[10px] font-black tracking-wide uppercase block">PERINGATAN BAHAYA SALDO DOMPET</span>
+              <span class="text-xs font-bold leading-tight block">Total belanja melebihi batas saldo dompet! Kurangi kuantitas atau batalkan barang sekunder.</span>
+            </div>
           </div>
         ` : ''}
       </div>
@@ -143,13 +158,14 @@ const UI = {
   },
 
   /**
-   * Render Tab 1: Belanja (Cart Items List & Controls)
+   * Render Tab 1: Belanja (Cart Items List, Store/Date Session & Controls) [SRS F-01, F-02, F-03, F-04]
    */
   renderBelanjaTab(summary) {
     const container = document.getElementById('tab-content-belanja');
     if (!container) return;
 
     const { items, grandTotal, allSavings, totalItemsCount } = summary;
+    const sessionInfo = Store.getSessionInfo ? Store.getSessionInfo() : { storeName: "Lotte Mart Grocery - Puri Indah", date: "2026-10-26" };
 
     let itemsHtml = '';
     if (items.length === 0) {
@@ -160,11 +176,11 @@ const UI = {
           </div>
           <h3 class="text-base font-bold text-white mb-1">Troli Masih Kosong</h3>
           <p class="text-xs text-slate-400 max-w-xs mb-6">
-            Mulai masukkan barang belanjaan saat berjalan di supermarket untuk memantau sisa saldo dompet secara real-time.
+            Keranjang belanja masih kosong, silakan scan atau tambahkan kebutuhan pokok pertamamu.
           </p>
-          <button id="btn-empty-add-item" class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-900/30 touch-scale">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i>
-            <span>Tambah Barang Pertama</span>
+          <button id="btn-empty-add-item" class="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-900/30 touch-scale touch-target-44">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+            <span>Tambah Barang Belanja</span>
           </button>
         </div>
       `;
@@ -179,20 +195,20 @@ const UI = {
             <div class="flex items-start justify-between gap-2 mb-1.5">
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
-                  <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/60">
-                    ${item.category || 'Sembako'}
+                  <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/60">
+                    ${item.category || 'Bahan Pokok'}
                   </span>
                   <span class="text-[10px] text-slate-400">
-                    Satuan: <strong class="text-slate-300">${item.unit || 'pcs'}</strong>
+                    Satuan: <strong class="text-slate-200">${item.unit || 'pcs'}</strong>
                   </span>
                 </div>
                 <h4 class="text-sm font-bold text-white tracking-tight leading-tight truncate">${item.name}</h4>
               </div>
               <div class="flex items-center gap-1 shrink-0">
-                <button class="btn-edit-item p-1.5 rounded-xl bg-slate-800/60 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors touch-scale" data-id="${item.id}" title="Edit Barang">
+                <button class="btn-edit-item p-2 rounded-xl bg-slate-800/60 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors touch-scale touch-target-44" data-id="${item.id}" title="Edit Barang" aria-label="Edit Barang">
                   <i data-lucide="edit-2" class="w-4 h-4"></i>
                 </button>
-                <button class="btn-delete-item p-1.5 rounded-xl bg-slate-800/60 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors touch-scale" data-id="${item.id}" title="Hapus Item">
+                <button class="btn-delete-item p-2 rounded-xl bg-slate-800/60 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors touch-scale touch-target-44" data-id="${item.id}" title="Hapus Item" aria-label="Hapus Item">
                   <i data-lucide="trash-2" class="w-4 h-4"></i>
                 </button>
               </div>
@@ -230,15 +246,11 @@ const UI = {
 
             <!-- Bottom Row: Stepper Ramah Jempol [F-02] & Subtotal -->
             <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
-              <!-- Thumb-Friendly Stepper (+ / -) -->
-              <div class="flex items-center gap-2 bg-slate-900/90 rounded-xl p-1 border border-slate-800">
-                <button class="btn-qty-minus stepper-btn touch-scale" data-id="${item.id}" aria-label="Kurangi kuantitas">
-                  <i data-lucide="minus" class="w-3.5 h-3.5"></i>
-                </button>
-                <span class="text-sm font-extrabold text-white min-w-[28px] text-center select-none">${item.qty}</span>
-                <button class="btn-qty-plus stepper-btn touch-scale" data-id="${item.id}" aria-label="Tambah kuantitas">
-                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                </button>
+              <!-- Thumb-Friendly Stepper (+ / -) & Direct Number Typing [SRS F-02 & UX] -->
+              <div class="flex items-center gap-1.5 bg-slate-900/90 rounded-xl p-1 border border-slate-800">
+                <button class="btn-qty-minus stepper-btn touch-scale" data-id="${item.id}" aria-label="Kurangi kuantitas">-</button>
+                <input type="number" inputmode="numeric" min="1" class="qty-input-inline w-12 h-11 text-center bg-slate-800 text-white font-extrabold text-sm rounded-xl border border-slate-700 py-1 focus:outline-none focus:border-emerald-500" value="${item.qty}" data-id="${item.id}" aria-label="Kuantitas">
+                <button class="btn-qty-plus stepper-btn touch-scale" data-id="${item.id}" aria-label="Tambah kuantitas">+</button>
               </div>
 
               <!-- Real-time Subtotal per Row [F-02] -->
@@ -256,6 +268,40 @@ const UI = {
 
     container.innerHTML = `
       <div class="px-4 py-3">
+        <!-- [SRS F-01 & F-06A] Sesi Belanja: Lokasi Toko & Selector Tanggal -->
+        <div class="glass-card rounded-2xl p-3 mb-3 border border-slate-800 bg-slate-900/70 shadow-md">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-200">
+              <i data-lucide="store" class="w-4 h-4 text-emerald-400"></i>
+              <span>Sesi Belanja Aktif (SRS F-01)</span>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Lotte Mart Puri Indah</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1">
+                <i data-lucide="map-pin" class="w-3 h-3 text-emerald-400"></i>
+                <span>Lokasi Toko Supermarket</span>
+              </label>
+              <select id="session-store-select" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-white focus:outline-none focus:border-emerald-500">
+                <option value="Lotte Mart Grocery - Puri Indah" ${sessionInfo.storeName === 'Lotte Mart Grocery - Puri Indah' ? 'selected' : ''}>Lotte Mart Grocery - Puri Indah</option>
+                <option value="Superindo - Puri Indah" ${sessionInfo.storeName === 'Superindo - Puri Indah' ? 'selected' : ''}>Superindo - Puri Indah</option>
+                <option value="Hypermart - Puri Indah" ${sessionInfo.storeName === 'Hypermart - Puri Indah' ? 'selected' : ''}>Hypermart - Puri Indah</option>
+                <option value="Grand Lucky Superstore" ${sessionInfo.storeName === 'Grand Lucky Superstore' ? 'selected' : ''}>Grand Lucky Superstore</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1">
+                <i data-lucide="calendar" class="w-3 h-3 text-emerald-400"></i>
+                <span>Tanggal Belanja (Date Picker)</span>
+              </label>
+              <input type="date" id="session-date-picker" value="${sessionInfo.date || '2026-10-26'}" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-white focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+        </div>
+
         <!-- Action Row above list -->
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
@@ -264,8 +310,9 @@ const UI = {
           </div>
 
           ${items.length > 0 ? `
-            <button id="btn-clear-cart" class="text-[11px] text-slate-400 hover:text-rose-400 px-2 py-1 rounded-lg bg-slate-800/60 touch-scale">
-              Kosongkan
+            <button id="btn-clear-cart" class="text-[11px] font-bold text-slate-400 hover:text-rose-400 px-2.5 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/80 touch-scale flex items-center gap-1">
+              <i data-lucide="trash-2" class="w-3 h-3"></i>
+              <span>Kosongkan</span>
             </button>
           ` : ''}
         </div>
@@ -306,7 +353,7 @@ const UI = {
       </div>
 
       <!-- Floating Quick Add Button (Bottom Right) -->
-      <button id="btn-fab-add" class="fixed bottom-20 right-4 sm:right-[calc(50%-200px)] z-20 w-14 h-14 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white shadow-2xl shadow-emerald-500/50 flex items-center justify-center touch-scale" title="Tambah Barang">
+      <button id="btn-fab-add" class="fixed bottom-20 right-4 sm:right-[calc(50%-200px)] z-20 w-14 h-14 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white shadow-2xl shadow-emerald-500/50 flex items-center justify-center touch-scale" title="Tambah Barang" aria-label="Tambah Barang">
         <i data-lucide="plus" class="w-7 h-7 stroke-[2.5]"></i>
       </button>
     `;
@@ -319,7 +366,22 @@ const UI = {
    * Bind events for Belanja Tab
    */
   bindBelanjaEvents() {
-    // Stepper Plus
+    // Session Store & Date Change Listeners [SRS F-01 & F-06A]
+    const storeSelect = document.getElementById('session-store-select');
+    const datePicker = document.getElementById('session-date-picker');
+    if (storeSelect && datePicker) {
+      const handleSessionChange = () => {
+        Store.saveSessionInfo({
+          storeName: storeSelect.value,
+          date: datePicker.value
+        });
+        this.showToast(`Sesi disetel: ${storeSelect.value}`);
+      };
+      storeSelect.addEventListener('change', handleSessionChange);
+      datePicker.addEventListener('change', handleSessionChange);
+    }
+
+    // Stepper Plus [SRS F-02]
     document.querySelectorAll('.btn-qty-plus').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = e.currentTarget.getAttribute('data-id');
@@ -328,7 +390,7 @@ const UI = {
       });
     });
 
-    // Stepper Minus
+    // Stepper Minus [SRS F-02]
     document.querySelectorAll('.btn-qty-minus').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = e.currentTarget.getAttribute('data-id');
@@ -337,12 +399,24 @@ const UI = {
       });
     });
 
-    // Delete Item
+    // Inline Quantity Numeric Input [SRS F-02: Ubah qty melalui tombol + atau mengetik angka]
+    document.querySelectorAll('.qty-input-inline').forEach((input) => {
+      input.addEventListener('input', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        const val = parseInt(e.currentTarget.value, 10);
+        if (!isNaN(val) && val >= 1) {
+          Store.updateCartItem(id, { qty: val });
+        }
+      });
+    });
+
+    // Delete Item [SRS F-06A]
     document.querySelectorAll('.btn-delete-item').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = e.currentTarget.getAttribute('data-id');
         this.vibrate(40);
         Store.removeCartItem(id);
+        this.showToast('Barang berhasil dihapus dari keranjang.');
       });
     });
 
@@ -375,13 +449,20 @@ const UI = {
       });
     }
 
-    // Clear cart button
+    // Clear cart button with Non-Blocking In-App Modal [SRS UX: Bebas window.confirm]
     const clearBtn = document.getElementById('btn-clear-cart');
     if (clearBtn) {
       clearBtn.addEventListener('click', () => {
-        if (confirm("Kosongkan semua barang dari keranjang aktif?")) {
-          Store.clearActiveCart();
-        }
+        this.openConfirmModal({
+          title: 'Kosongkan Keranjang Belanja?',
+          message: 'Seluruh barang di troli saat ini akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.',
+          confirmText: 'Ya, Kosongkan',
+          confirmColor: 'bg-rose-600 hover:bg-rose-500',
+          onConfirm: () => {
+            Store.clearActiveCart();
+            this.showToast('Keranjang belanja telah dikosongkan.');
+          }
+        });
       });
     }
 
@@ -640,11 +721,60 @@ const UI = {
     const resetBtn = document.getElementById('btn-reset-demo');
     if (resetBtn) {
       resetBtn.addEventListener('click', () => {
-        if (confirm("Reset ulang semua data simulasi ke pengaturan awal?")) {
-          Store.resetDemo();
-        }
+        this.openConfirmModal({
+          title: 'Reset Ulang Data?',
+          message: 'Reset ulang semua data simulasi ke pengaturan awal? Data profil Anda tetap aman.',
+          confirmText: 'Ya, Reset',
+          confirmColor: 'bg-amber-600 hover:bg-amber-500',
+          onConfirm: () => {
+            Store.resetDemo();
+            this.showToast('Data simulasi telah direset ke awal.');
+          }
+        });
       });
     }
+  },
+
+  /**
+   * Generic Non-Blocking Mobile Confirmation Modal [SRS UX: Bebas window.confirm]
+   */
+  openConfirmModal({ title = 'Konfirmasi', message = 'Apakah Anda yakin?', confirmText = 'Ya, Lanjutkan', confirmColor = 'bg-rose-600 hover:bg-rose-500', onConfirm }) {
+    const modal = document.getElementById('modal-container');
+    if (!modal) return;
+
+    modal.classList.remove('hidden');
+    modal.innerHTML = `
+      <div class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div class="w-full max-w-sm bg-slate-900 border border-slate-700/80 rounded-3xl p-5 text-center shadow-2xl animate-slide-up">
+          <div class="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto mb-3 shadow-inner">
+            <i data-lucide="alert-circle" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-base font-bold text-white mb-1.5">${title}</h3>
+          <p class="text-xs text-slate-300 mb-5 leading-relaxed">${message}</p>
+          <div class="grid grid-cols-2 gap-2.5">
+            <button id="modal-confirm-cancel" class="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs touch-scale touch-target-44 border border-slate-700">
+              Batal
+            </button>
+            <button id="modal-confirm-yes" class="py-3 px-4 rounded-xl ${confirmColor} text-white font-bold text-xs touch-scale touch-target-44 shadow-lg shadow-rose-950/40">
+              ${confirmText}
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    lucide.createIcons();
+
+    const closeModal = () => {
+      modal.classList.add('hidden');
+      modal.innerHTML = '';
+    };
+
+    document.getElementById('modal-confirm-cancel').addEventListener('click', closeModal);
+    document.getElementById('modal-confirm-yes').addEventListener('click', () => {
+      closeModal();
+      if (typeof onConfirm === 'function') onConfirm();
+    });
   },
 
   /**
@@ -670,28 +800,30 @@ const UI = {
                 <p class="text-[11px] text-slate-400">${isEdit ? 'Perbarui rincian harga, kuantitas, atau promo' : 'Masukkan produk ke dalam troli supermarket'}</p>
               </div>
             </div>
-            <button id="modal-close" class="p-1.5 rounded-full text-slate-400 hover:text-white bg-slate-800 touch-scale">
+            <button id="modal-close" class="p-2 rounded-full text-slate-400 hover:text-white bg-slate-800 touch-scale touch-target-44" aria-label="Tutup Modal">
               <i data-lucide="x" class="w-4 h-4"></i>
             </button>
           </div>
 
           <!-- Form [F-01] -->
-          <form id="form-add-item" class="space-y-4">
+          <form id="form-add-item" class="space-y-4" novalidate>
             <!-- Nama Produk with Live Autocomplete -->
             <div>
               <label class="block text-xs font-semibold text-slate-300 mb-1">Nama Produk *</label>
               <div class="relative">
-                <input type="text" id="input-name" required placeholder="Contoh: Beras Ramos 5kg, Telur, Indomie..." 
+                <input type="text" id="input-name" placeholder="Contoh: Beras Rojolele, Minyak Goreng, Telur..." 
                   class="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 placeholder-slate-500">
                 <div id="autocomplete-results" class="hidden absolute left-0 right-0 top-full mt-1 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-30 overflow-hidden divide-y divide-slate-700/50"></div>
               </div>
+              <p id="err-input-name" class="hidden text-[10px] text-rose-400 font-semibold mt-1">Nama barang wajib diisi!</p>
             </div>
 
-            <!-- Kategori & Satuan -->
+            <!-- Kategori & Satuan [SRS F-01: Bahan Pokok & karung/5kg] -->
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs font-semibold text-slate-300 mb-1">Kategori</label>
                 <select id="input-category" class="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500">
+                  <option value="Bahan Pokok" selected>Bahan Pokok</option>
                   <option value="Sembako">Sembako</option>
                   <option value="Makanan Instan">Makanan Instan</option>
                   <option value="Toiletries">Toiletries</option>
@@ -706,10 +838,11 @@ const UI = {
               <div>
                 <label class="block text-xs font-semibold text-slate-300 mb-1">Satuan Ukuran</label>
                 <select id="input-unit" class="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500">
-                  <option value="pcs">pcs</option>
-                  <option value="pack">pack</option>
+                  <option value="karung/5kg">karung/5kg</option>
                   <option value="kg">kg</option>
                   <option value="liter">liter</option>
+                  <option value="pcs">pcs</option>
+                  <option value="pack">pack</option>
                   <option value="kaleng">kaleng</option>
                   <option value="botol">botol</option>
                   <option value="gr">gr</option>
@@ -722,28 +855,29 @@ const UI = {
               <div>
                 <label class="block text-xs font-semibold text-slate-300 mb-1">Jumlah (Qty)</label>
                 <div class="flex items-center bg-slate-800 border border-slate-700 rounded-xl p-1">
-                  <button type="button" id="modal-qty-minus" class="stepper-btn w-8 h-8 text-sm">-</button>
-                  <input type="number" id="input-qty" value="1" min="1" class="w-full text-center bg-transparent text-sm font-bold text-white focus:outline-none">
-                  <button type="button" id="modal-qty-plus" class="stepper-btn w-8 h-8 text-sm">+</button>
+                  <button type="button" id="modal-qty-minus" class="stepper-btn touch-target-44" aria-label="Kurang kuantitas">-</button>
+                  <input type="number" inputmode="numeric" id="input-qty" value="1" min="1" class="w-full text-center bg-transparent text-sm font-bold text-white focus:outline-none" aria-label="Kuantitas">
+                  <button type="button" id="modal-qty-plus" class="stepper-btn touch-target-44" aria-label="Tambah kuantitas">+</button>
                 </div>
               </div>
 
               <div>
                 <label class="block text-xs font-semibold text-slate-300 mb-1">Harga Satuan (Rp) *</label>
-                <input type="number" id="input-price" required placeholder="0" min="0" 
+                <input type="number" inputmode="numeric" id="input-price" placeholder="0" min="1" 
                   class="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-white focus:outline-none focus:border-emerald-500">
+                <p id="err-input-price" class="hidden text-[10px] text-rose-400 font-semibold mt-1">Harga tidak boleh 0 atau minus!</p>
               </div>
             </div>
 
             <!-- Harga Bulan Lalu & Real-time Comparator Preview [F-04] -->
             <div class="bg-slate-950/60 p-3 rounded-2xl border border-slate-800 space-y-2">
               <div class="flex items-center justify-between">
-                <label class="text-xs font-semibold text-slate-400 flex items-center gap-1">
-                  <i data-lucide="history" class="w-3.5 h-3.5"></i>
+                <label class="text-xs font-semibold text-slate-300 flex items-center gap-1">
+                  <i data-lucide="history" class="w-3.5 h-3.5 text-emerald-400"></i>
                   <span>Harga Bulan Lalu (Rp):</span>
                 </label>
-                <input type="number" id="input-last-price" placeholder="Otomatis / 0" min="0" 
-                  class="w-32 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs text-right text-slate-300 focus:outline-none focus:border-emerald-500">
+                <input type="number" inputmode="numeric" id="input-last-price" placeholder="Otomatis / 0" min="0" 
+                  class="w-32 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs text-right text-slate-200 font-semibold focus:outline-none focus:border-emerald-500">
               </div>
 
               <!-- Real-time Comparison Preview Badge -->
@@ -771,43 +905,43 @@ const UI = {
               <div id="discount-inputs-container" class="space-y-2 pt-1 hidden">
                 <!-- Single Discount -->
                 <div id="container-disc-single" class="hidden">
-                  <label class="text-[11px] text-slate-400 block mb-1">Persen Diskon (%):</label>
-                  <input type="number" id="input-disc-a" placeholder="Contoh: 25" min="0" max="100" 
+                  <label class="text-[11px] text-slate-300 block mb-1">Persen Diskon (%):</label>
+                  <input type="number" inputmode="numeric" id="input-disc-a" placeholder="Contoh: 25" min="0" max="100" 
                     class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white">
                 </div>
 
-                <!-- Tiered Discount (% + %) -->
+                <!-- Tiered Discount (% + %) [SRS F-03: Kompound Bertingkat] -->
                 <div id="container-disc-tiered" class="hidden space-y-1.5">
-                  <label class="text-[11px] text-slate-400 block">Diskon Bertingkat (Contoh: 50% + 20%):</label>
+                  <label class="text-[11px] text-slate-300 block">Diskon Bertingkat (Contoh: 50% + 20%):</label>
                   <div class="grid grid-cols-2 gap-2">
-                    <input type="number" id="input-tier-a" placeholder="Diskon 1 (%)" min="0" max="100" 
+                    <input type="number" inputmode="numeric" id="input-tier-a" placeholder="Diskon 1 (%)" min="0" max="100" 
                       class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white">
-                    <input type="number" id="input-tier-b" placeholder="Diskon 2 (%)" min="0" max="100" 
+                    <input type="number" inputmode="numeric" id="input-tier-b" placeholder="Diskon 2 (%)" min="0" max="100" 
                       class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white">
                   </div>
-                  <p class="text-[10px] text-slate-400 italic">
-                    *Dihitung berturut-turut (sekuensial), bukan dijumlahkan 70%.
+                  <p class="text-[10px] text-emerald-400 font-medium">
+                    ✓ Dihitung kompound bertahap: P1 = Awal - A%, P2 = P1 - B% (Bukan 70% linier).
                   </p>
                 </div>
 
                 <!-- Nominal Discount -->
                 <div id="container-disc-nominal" class="hidden">
-                  <label class="text-[11px] text-slate-400 block mb-1">Potongan Langsung (Rp):</label>
-                  <input type="number" id="input-disc-nominal" placeholder="Contoh: 5000" min="0" 
+                  <label class="text-[11px] text-slate-300 block mb-1">Potongan Langsung (Rp):</label>
+                  <input type="number" inputmode="numeric" id="input-disc-nominal" placeholder="Contoh: 5000" min="0" 
                     class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white">
                 </div>
 
                 <!-- Live Savings Preview -->
-                <div id="modal-savings-preview" class="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 font-semibold flex items-center justify-between">
+                <div id="modal-savings-preview" class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 font-semibold flex items-center justify-between">
                   <span>Hasil Diskon:</span>
-                  <span id="label-calculated-savings">Hemat Rp 0</span>
+                  <div id="label-calculated-savings" class="text-right">Hemat Rp 0</div>
                 </div>
               </div>
             </div>
 
-            <!-- Submit Button -->
-            <button type="submit" class="w-full py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/40 touch-scale">
-              <i data-lucide="${isEdit ? 'check' : 'shopping-bag'}" class="w-4 h-4"></i>
+            <!-- Submit Button (Touch target >= 44px) -->
+            <button type="submit" class="w-full py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/40 touch-scale touch-target-44">
+              <i data-lucide="${isEdit ? 'check' : 'shopping-bag'}" class="w-5 h-5"></i>
               <span>${isEdit ? 'Simpan Perubahan' : 'Masukkan ke Troli'}</span>
             </button>
           </form>
@@ -820,7 +954,7 @@ const UI = {
   },
 
   /**
-   * Bind events inside Add Item Modal
+   * Bind events inside Add Item Modal with Active Validation [SRS F-01, F-03, F-04]
    */
   bindAddItemModalEvents(itemToEdit = null) {
     const modal = document.getElementById('modal-container');
@@ -856,9 +990,20 @@ const UI = {
       updatePreviews();
     });
 
+    // Block negative signs on price inputs
+    priceInput.addEventListener('keydown', (e) => {
+      if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+        e.preventDefault();
+        this.showToast('⚠️ Harga barang tidak boleh bernilai negatif (-Rp).', 'error');
+      }
+    });
+
     // Autocomplete for Nama Produk
     nameInput.addEventListener('input', (e) => {
       const q = e.target.value.trim();
+      document.getElementById('err-input-name')?.classList.add('hidden');
+      nameInput.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
+
       if (q.length < 2) {
         autocompleteDiv.classList.add('hidden');
         return;
@@ -866,7 +1011,7 @@ const UI = {
       const matches = Store.searchCatalog(q);
       if (matches.length > 0) {
         autocompleteDiv.innerHTML = matches.map(item => `
-          <div class="px-3 py-2 text-xs hover:bg-slate-700 cursor-pointer flex items-center justify-between auto-suggest-item" 
+          <div class="px-3 py-2.5 text-xs hover:bg-slate-700 cursor-pointer flex items-center justify-between auto-suggest-item" 
                data-name="${item.name}" data-category="${item.category}" data-unit="${item.unit}" data-lastprice="${item.lastPrice}">
             <div>
               <span class="font-bold text-white">${item.name}</span>
@@ -910,8 +1055,17 @@ const UI = {
     // Live update comparison & discount calculation
     const updatePreviews = () => {
       const currentPrice = parseFloat(priceInput.value) || 0;
-      const lastPrice = parseFloat(lastPriceInput.value) || 0;
+      let lastPrice = parseFloat(lastPriceInput.value) || 0;
       const qty = parseInt(qtyInput.value) || 1;
+
+      // If lastPrice is empty, try lookup from catalog
+      if (!lastPrice && nameInput.value.trim()) {
+        const catItem = Store.findCatalogItemByName(nameInput.value.trim());
+        if (catItem && catItem.lastPrice) {
+          lastPrice = catItem.lastPrice;
+          lastPriceInput.value = lastPrice;
+        }
+      }
 
       // Update comparator preview [F-04]
       const comp = Comparator.compare(currentPrice, lastPrice);
@@ -940,11 +1094,26 @@ const UI = {
       const discountResult = Calculator.calculateItemDiscount(currentPrice, type, discA, discB, discNominal);
       const label = document.getElementById('label-calculated-savings');
       if (label) {
-        label.innerText = `Bayar ${Calculator.formatRupiah(discountResult.finalPrice * qty)} (Hemat ${Calculator.formatRupiah(discountResult.savingsPerUnit * qty)})`;
+        if (type === 'tiered' && (discA > 0 || discB > 0)) {
+          const afterTier1 = currentPrice - (currentPrice * (discA / 100));
+          const afterTier2 = afterTier1 - (afterTier1 * (discB / 100));
+          label.innerHTML = `
+            <div class="text-right">
+              <span class="text-emerald-300 font-bold block">Bayar ${Calculator.formatRupiah(discountResult.finalPrice * qty)} (Hemat ${Calculator.formatRupiah(discountResult.savingsPerUnit * qty)})</span>
+              <span class="text-[10px] text-emerald-400/80 block mt-0.5">Tahap 1 (-${discA}%): ${Calculator.formatRupiah(afterTier1)} → Tahap 2 (-${discB}%): ${Calculator.formatRupiah(afterTier2)}</span>
+            </div>
+          `;
+        } else {
+          label.innerText = `Bayar ${Calculator.formatRupiah(discountResult.finalPrice * qty)} (Hemat ${Calculator.formatRupiah(discountResult.savingsPerUnit * qty)})`;
+        }
       }
     };
 
-    priceInput.addEventListener('input', updatePreviews);
+    priceInput.addEventListener('input', () => {
+      document.getElementById('err-input-price')?.classList.add('hidden');
+      priceInput.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
+      updatePreviews();
+    });
     lastPriceInput.addEventListener('input', updatePreviews);
     qtyInput.addEventListener('input', updatePreviews);
     document.getElementById('input-disc-a')?.addEventListener('input', updatePreviews);
@@ -972,7 +1141,7 @@ const UI = {
     // Prefill data if editing an existing item
     if (itemToEdit) {
       nameInput.value = itemToEdit.name || '';
-      categoryInput.value = itemToEdit.category || 'Sembako';
+      categoryInput.value = itemToEdit.category || 'Bahan Pokok';
       unitInput.value = itemToEdit.unit || 'pcs';
       qtyInput.value = itemToEdit.qty || 1;
       priceInput.value = itemToEdit.currentPrice || '';
@@ -998,11 +1167,42 @@ const UI = {
       updatePreviews();
     }
 
-    // Form Submit
+    // Form Submit with ACTIVE VALIDATION [SRS F-01: Mencegah input kosong/minus]
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const type = discountTypeSelect.value;
 
+      // 1. Validasi Nama Produk
+      const trimmedName = nameInput.value.trim();
+      if (!trimmedName) {
+        nameInput.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
+        document.getElementById('err-input-name')?.classList.remove('hidden');
+        nameInput.focus();
+        this.vibrate(50);
+        this.showToast('⚠️ Nama barang wajib diisi! Mohon lengkapi nama produk sebelum menambahkan.', 'error');
+        return;
+      }
+
+      // 2. Validasi Harga (Tidak boleh kosong, 0, atau negatif)
+      const parsedPrice = parseFloat(priceInput.value);
+      if (isNaN(parsedPrice) || parsedPrice <= 0) {
+        priceInput.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
+        document.getElementById('err-input-price')?.classList.remove('hidden');
+        priceInput.focus();
+        this.vibrate(50);
+        this.showToast('⚠️ Harga barang tidak valid! Harga tidak boleh kosong, 0, atau bernilai negatif (-Rp).', 'error');
+        return;
+      }
+
+      // 3. Validasi Qty
+      const parsedQty = parseInt(qtyInput.value, 10);
+      if (isNaN(parsedQty) || parsedQty < 1) {
+        qtyInput.focus();
+        this.vibrate(50);
+        this.showToast('⚠️ Kuantitas belanja minimal adalah 1!', 'error');
+        return;
+      }
+
+      const type = discountTypeSelect.value;
       let discA = 0;
       let discB = 0;
       let discNom = 0;
@@ -1017,11 +1217,11 @@ const UI = {
       }
 
       const itemPayload = {
-        name: nameInput.value.trim(),
+        name: trimmedName,
         category: categoryInput.value,
         unit: unitInput.value,
-        qty: Math.max(1, parseInt(qtyInput.value, 10) || 1),
-        currentPrice: Math.max(0, parseFloat(priceInput.value) || 0),
+        qty: parsedQty,
+        currentPrice: parsedPrice,
         lastPrice: Math.max(0, parseFloat(lastPriceInput.value) || 0),
         discountType: type,
         discountA: discA,
@@ -1044,7 +1244,7 @@ const UI = {
   },
 
   /**
-   * Modal: Ubah Saldo Anggaran
+   * Modal: Ubah Saldo Anggaran with Quick Presets [SRS F-05]
    */
   openBudgetModal() {
     const modal = document.getElementById('modal-container');
@@ -1063,10 +1263,10 @@ const UI = {
               </span>
               <div>
                 <h3 class="text-base font-bold text-white">Atur Batas Anggaran</h3>
-                <p class="text-[11px] text-slate-400">Sesuaikan kapasitas uang bulanan anak rantau</p>
+                <p class="text-[11px] text-slate-400">Pengendali Safety Cap Saldo Belanja (SRS F-05)</p>
               </div>
             </div>
-            <button id="modal-close" class="p-1.5 rounded-full text-slate-400 hover:text-white bg-slate-800 touch-scale">
+            <button id="modal-close" class="p-2 rounded-full text-slate-400 hover:text-white bg-slate-800 touch-scale touch-target-44" aria-label="Tutup Modal">
               <i data-lucide="x" class="w-4 h-4"></i>
             </button>
           </div>
@@ -1074,20 +1274,28 @@ const UI = {
           <form id="form-edit-budget" class="space-y-4">
             <div>
               <label class="block text-xs font-semibold text-slate-300 mb-1">Batas Saldo Belanja (Rp) *</label>
-              <input type="number" id="input-budget-limit" required value="${currentSettings.monthlyLimit}" min="10000" step="5000" 
+              <input type="number" inputmode="numeric" id="input-budget-limit" required value="${currentSettings.monthlyLimit}" min="10000" step="5000" 
                 class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-base font-bold text-white focus:outline-none focus:border-emerald-500">
-              <p class="text-[10px] text-slate-400 mt-1">Uang yang dialokasikan khusus untuk belanja bulanan.</p>
+              
+              <!-- Quick Budget Presets for DT2 Testing -->
+              <div class="flex items-center gap-1.5 flex-wrap pt-2">
+                <span class="text-[10px] text-slate-400 font-medium">Uji Cepat:</span>
+                <button type="button" class="btn-budget-preset px-2 py-1 rounded-lg bg-slate-800 hover:bg-emerald-600 text-[10px] font-bold text-emerald-300 hover:text-white border border-slate-700 touch-scale" data-val="100000">Rp 100.000 (Uji DT2)</button>
+                <button type="button" class="btn-budget-preset px-2 py-1 rounded-lg bg-slate-800 hover:bg-emerald-600 text-[10px] font-bold text-emerald-300 hover:text-white border border-slate-700 touch-scale" data-val="150000">Rp 150.000 (Uji F5)</button>
+                <button type="button" class="btn-budget-preset px-2 py-1 rounded-lg bg-slate-800 hover:bg-emerald-600 text-[10px] font-bold text-emerald-300 hover:text-white border border-slate-700 touch-scale" data-val="350000">Rp 350.000 (Rian)</button>
+                <button type="button" class="btn-budget-preset px-2 py-1 rounded-lg bg-slate-800 hover:bg-emerald-600 text-[10px] font-bold text-emerald-300 hover:text-white border border-slate-700 touch-scale" data-val="500000">Rp 500.000</button>
+              </div>
             </div>
 
             <div>
               <label class="block text-xs font-semibold text-slate-300 mb-1">Cadangan Tunai Darurat (Rp)</label>
-              <input type="number" id="input-emergency" value="${currentSettings.emergencyReserve || 0}" min="0" step="5000" 
+              <input type="number" inputmode="numeric" id="input-emergency" value="${currentSettings.emergencyReserve || 0}" min="0" step="5000" 
                 class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-emerald-500">
               <p class="text-[10px] text-slate-400 mt-1">Uang darurat yang tidak boleh disentuh di supermarket.</p>
             </div>
 
-            <button type="submit" class="w-full py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/40 touch-scale">
-              <i data-lucide="save" class="w-4 h-4"></i>
+            <button type="submit" class="w-full py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/40 touch-scale touch-target-44">
+              <i data-lucide="save" class="w-5 h-5"></i>
               <span>Simpan Pengaturan Saldo</span>
             </button>
           </form>
@@ -1096,6 +1304,18 @@ const UI = {
     `;
 
     lucide.createIcons();
+
+    // Preset button clicks
+    document.querySelectorAll('.btn-budget-preset').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const val = e.currentTarget.getAttribute('data-val');
+        const limitInput = document.getElementById('input-budget-limit');
+        if (limitInput && val) {
+          limitInput.value = val;
+          this.vibrate(20);
+        }
+      });
+    });
 
     document.getElementById('modal-close').addEventListener('click', () => {
       modal.classList.add('hidden');
@@ -1118,6 +1338,10 @@ const UI = {
         emergencyReserve: newReserve
       });
       this.vibrate(30);
+      this.showToast('Pengaturan saldo dompet berhasil disimpan!');
+      modal.classList.add('hidden');
+    });
+  },
       modal.classList.add('hidden');
     });
   },
@@ -1850,7 +2074,8 @@ const UI = {
         const storageBucket = document.getElementById('fb-storageBucket').value.trim();
 
         if (!apiKey || !projectId) {
-          alert('Mohon isi minimal API Key dan Project ID dari konsol Firebase.');
+          this.vibrate(50);
+          this.showToast('⚠️ Mohon isi minimal API Key dan Project ID dari konsol Firebase.', 'error');
           return;
         }
 
@@ -1863,7 +2088,8 @@ const UI = {
             closeModal();
             this.render();
           } else {
-            alert('Gagal menghubungkan ke Firebase. Mohon periksa API Key dan koneksi internet.');
+            this.vibrate(50);
+            this.showToast('⚠️ Gagal menghubungkan ke Firebase. Mohon periksa API Key dan koneksi internet.', 'error');
           }
         }
       });

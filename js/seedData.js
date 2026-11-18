@@ -30,6 +30,10 @@ const SEED_DATA = {
 
   // Data for User 1: Rian (Budget Rp 500.000, sembako & toiletries)
   userData_user_rian: {
+    sessionInfo: {
+      storeName: "Lotte Mart Grocery - Puri Indah",
+      date: "2026-10-26"
+    },
     budgetSettings: {
       monthlyLimit: 500000,
       emergencyReserve: 50000,
@@ -37,12 +41,18 @@ const SEED_DATA = {
     },
     cartDiscount: { type: 'none', value: 0 },
     catalog: [
-      { id: "prod_r1", name: "Beras Ramos 5kg", category: "Sembako", unit: "pack", lastPrice: 68000, updatedAt: "2026-09-25" },
-      { id: "prod_r2", name: "Minyak Goreng 2L", category: "Sembako", unit: "liter", lastPrice: 34000, updatedAt: "2026-09-25" },
-      { id: "prod_r3", name: "Telur Ayam 1kg", category: "Sembako", unit: "kg", lastPrice: 28000, updatedAt: "2026-09-25" },
+      { id: "prod_r0", name: "Beras Rojolele", category: "Bahan Pokok", unit: "karung/5kg", lastPrice: 68000, updatedAt: "2026-09-26" },
+      { id: "prod_r0b", name: "Beras 5kg", category: "Bahan Pokok", unit: "pack", lastPrice: 68000, updatedAt: "2026-09-26" },
+      { id: "prod_r1", name: "Beras Ramos 5kg", category: "Bahan Pokok", unit: "pack", lastPrice: 68000, updatedAt: "2026-09-25" },
+      { id: "prod_r2", name: "Minyak Goreng 2L", category: "Bahan Pokok", unit: "liter", lastPrice: 43000, updatedAt: "2026-09-25" },
+      { id: "prod_r3", name: "Telur 1kg", category: "Bahan Pokok", unit: "kg", lastPrice: 32000, updatedAt: "2026-09-26" },
+      { id: "prod_r3b", name: "Telur Ayam 1kg", category: "Bahan Pokok", unit: "kg", lastPrice: 32000, updatedAt: "2026-09-25" },
+      { id: "prod_r3c", name: "Garam 500g", category: "Dapur & Bumbu", unit: "pack", lastPrice: 5000, updatedAt: "2026-09-26" },
       { id: "prod_r4", name: "Indomie Goreng (5 pcs)", category: "Makanan Instan", unit: "pack", lastPrice: 15000, updatedAt: "2026-09-25" },
       { id: "prod_r5", name: "Sarden Kaleng 155g", category: "Makanan Instan", unit: "kaleng", lastPrice: 11000, updatedAt: "2026-09-25" },
       { id: "prod_r6", name: "Sabun Mandi Cair Refill 450ml", category: "Toiletries", unit: "pack", lastPrice: 24000, updatedAt: "2026-09-25" },
+      { id: "prod_r6b", name: "Sabun Cuci", category: "Toiletries", unit: "pcs", lastPrice: 20000, updatedAt: "2026-09-26" },
+      { id: "prod_r6c", name: "Wajan", category: "Lainnya", unit: "pcs", lastPrice: 100000, updatedAt: "2026-09-26" },
       { id: "prod_r7", name: "Pasta Gigi Herbal 190g", category: "Toiletries", unit: "pcs", lastPrice: 17000, updatedAt: "2026-09-25" },
       { id: "prod_r8", name: "Deterjen Konsentrat 800g", category: "Toiletries", unit: "pack", lastPrice: 19500, updatedAt: "2026-09-25" },
       { id: "prod_r9", name: "Kecap Manis Refill 550ml", category: "Dapur & Bumbu", unit: "pack", lastPrice: 18000, updatedAt: "2026-09-25" },

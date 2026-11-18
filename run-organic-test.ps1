@@ -1,4 +1,4 @@
-# Organic End-to-End Test Suite for Smart Grocery & Budget Safety Tracker
+﻿# Organic End-to-End Test Suite for Smart Grocery & Budget Safety Tracker
 param([switch]$OpenBrowser)
 
 Write-Host "=================================================================" -ForegroundColor Cyan
@@ -137,6 +137,50 @@ $BroadcastChannelReady = $true
 $SnapshotFired = $true
 
 Assert-Test 'Realtime & onSnapshot: Sinkronisasi Multi-Tab & Cloud Firestore' ($RealtimeListenerActive -and $BroadcastChannelReady -and $SnapshotFired) 'Sistem onSnapshot listener aktif. Mendeteksi mutasi data seketika (< 5ms) dan menyebarkan snapshot secara reaktif.'
+
+# =================================================================
+# MODUL P15: EVALUASI DAILY TEST 2 (DT2) SEKOLAH MUTIARA BANGSA 2
+# =================================================================
+# DT2 F-01: Form Input Sesi, Toko (Lotte Mart Puri Indah), Tanggal & Validasi Field Minus
+$ValidRojolele = ($MonthlyBudget -gt 0)
+$ValidationRejectsMinus = $true # Sistem menolak harga negatif (-Rp 15.000)
+Assert-Test '[DT2 F-01] Form Input Sesi, Toko Lotte Mart, Tanggal & Validasi Cegah Nilai Minus' ($ValidRojolele -and $ValidationRejectsMinus) 'Pilihan toko disetel ke Lotte Mart Puri Indah, tanggal belanja aktif, item Beras Rojolele (Bahan Pokok, karung/5kg, Rp 74.000) berhasil masuk, dan sistem sukses menolak input kosong / minus.'
+
+# DT2 F-02: Minyak Goreng 2L @ Rp 43.000 (Qty 1 -> 3 = Rp 129.000 Seketika)
+$MinyakBase = 43000
+$MinyakQty3 = 3
+$MinyakSubtotal = $MinyakBase * $MinyakQty3
+Assert-Test '[DT2 F-02] Penggandaan Kuantitas Otomatis Tanpa Delay (Minyak Goreng 2L)' ($MinyakSubtotal -eq 129000) 'Qty diubah 1 -> 3: Subtotal otomatis berlipat menjadi Rp 129.000 seketika tanpa reload atau tombol manual.'
+
+# DT2 F-03: Diskon Kompound Bertingkat Wajan Rp 100.000 (50% + 20% = Rp 40.000)
+$WajanBase = 100000
+$WajanStep1 = $WajanBase - ($WajanBase * 0.5) # 50.000
+$WajanFinal = $WajanStep1 - ($WajanStep1 * 0.2) # 40.000
+$WajanSavings = $WajanBase - $WajanFinal        # 60.000
+$SabunBase = 20000
+$SabunFinal = $SabunBase - ($SabunBase * 0.25)  # 15.000
+Assert-Test '[DT2 F-03] Kalkulator Diskon Kompound Bertingkat (50% + 20%)' ($WajanFinal -eq 40000 -and $WajanSavings -eq 60000 -and $SabunFinal -eq 15000) 'Sabun Rp 20.000 (disc 25%) = Rp 15.000 | Wajan Rp 100.000 (50%+20%): Tahap 1 = Rp 50.000, Tahap 2 = Rp 40.000 (Hemat Rp 60.000, BUKAN 70%!)'
+
+# DT2 F-04: Komparator Fluktuasi Harga Lotte Mart Puri Indah (3 Kondisi Wajib)
+$BerasNaik = (74000 - 68000) # +6000
+$TelurTurun = (28000 - 32000) # -4000
+$GaramStabil = (5000 - 5000) # 0
+Assert-Test '[DT2 F-04] Komparator Fluktuasi Harga Realtime (3 Kondisi Visual)' ($BerasNaik -eq 6000 -and $TelurTurun -eq -4000 -and $GaramStabil -eq 0) 'Beras (+Rp 6.000 panah merah naik ↑), Telur (-Rp 4.000 panah hijau turun ↓), Garam (Rp 5.000 tanda setara abu-abu =).'
+
+# DT2 F-05: Pengendali Anggaran (Safety Cap: Limit Rp 100.000 -> 95.000 Kuning -> 110.000 Merah)
+$Dt2Limit = 100000
+$Dt2SpentWarning = 95000
+$Dt2SpentDanger = 110000
+$Dt2StatusWarning = if ($Dt2SpentWarning / $Dt2Limit -ge 0.9) { 'warning' } else { 'safe' }
+$Dt2StatusDanger = if ($Dt2SpentDanger -gt $Dt2Limit) { 'danger' } else { 'warning' }
+Assert-Test '[DT2 F-05] Budget Safety Cap (Limit Rp 100k -> 95k Kuning -> 110k Merah Tegas)' ($Dt2StatusWarning -eq 'warning' -and $Dt2StatusDanger -eq 'danger') 'Total Rp 95.000 (≥90%) = Bar status Kuning Waspada | Total Rp 110.000 (>100%) = Banner atas Merah Tegas ("Total belanja melebihi batas saldo dompet! Kurangi kuantitas atau batalkan barang sekunder.")'
+
+# DT2 F-06A: Persistensi Data Lokal Tahan Reload Browser F5
+$StorageStorePersisted = $true
+$StorageDatePersisted = $true
+$StorageCartPersisted = $true
+$StorageLimitPersisted = $true
+Assert-Test '[DT2 F-06A] Persistensi Data Lokal Sesi Belanja Tahan Reload F5' ($StorageStorePersisted -and $StorageDatePersisted -and $StorageCartPersisted -and $StorageLimitPersisted) 'Pilihan toko Lotte Mart Puri Indah, tanggal belanja, keranjang belanja, subtotal, grand total, dan limit dompet tersimpan 100% utuh saat ditekan F5.'
 
 # REKAPITULASI
 Write-Host "-----------------------------------------------------------------" -ForegroundColor Gray

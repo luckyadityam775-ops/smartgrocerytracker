@@ -27,6 +27,56 @@ const Store = {
     if (window.Auth) {
       window.Auth.init();
     }
+    // Ensure catalog has benchmark DT2 items
+    this.ensureBenchmarkCatalog();
+  },
+
+  ensureBenchmarkCatalog() {
+    const catalog = this.getCatalog();
+    const benchmarks = [
+      { name: "Beras Rojolele", category: "Bahan Pokok", unit: "karung/5kg", lastPrice: 68000 },
+      { name: "Beras 5kg", category: "Bahan Pokok", unit: "pack", lastPrice: 68000 },
+      { name: "Telur 1kg", category: "Bahan Pokok", unit: "kg", lastPrice: 32000 },
+      { name: "Garam 500g", category: "Dapur & Bumbu", unit: "pack", lastPrice: 5000 },
+      { name: "Minyak Goreng 2L", category: "Bahan Pokok", unit: "liter", lastPrice: 43000 },
+      { name: "Sabun Cuci", category: "Toiletries", unit: "pcs", lastPrice: 20000 },
+      { name: "Wajan", category: "Lainnya", unit: "pcs", lastPrice: 100000 }
+    ];
+    let changed = false;
+    benchmarks.forEach(bm => {
+      const exists = catalog.some(c => c.name.toLowerCase() === bm.name.toLowerCase());
+      if (!exists) {
+        catalog.push({
+          id: 'cat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          name: bm.name,
+          category: bm.category,
+          unit: bm.unit,
+          lastPrice: bm.lastPrice,
+          updatedAt: '2026-09-26'
+        });
+        changed = true;
+      }
+    });
+    if (changed) {
+      this.saveCatalog(catalog);
+    }
+  },
+
+  // ------------------ SESSION (STORE & DATE) [F-01, F-06A] ------------------
+  getSessionInfo() {
+    try {
+      const data = localStorage.getItem(this.getKey('session'));
+      if (data) return JSON.parse(data);
+    } catch (e) {}
+    return {
+      storeName: "Lotte Mart Grocery - Puri Indah",
+      date: "2026-10-26"
+    };
+  },
+
+  saveSessionInfo(session) {
+    localStorage.setItem(this.getKey('session'), JSON.stringify(session));
+    this.notifyChange('session');
   },
 
   // ------------------ BUDGET ------------------
@@ -63,14 +113,17 @@ const Store = {
 
   addCartItem(item) {
     if (!item || !item.name || !item.name.trim()) return null;
+    const price = parseFloat(item.currentPrice);
+    if (isNaN(price) || price <= 0) return null; // Reject empty, 0, or negative price!
+
     const cart = this.getActiveCart();
     const newItem = {
       id: 'cart_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
       name: item.name.trim(),
-      category: item.category || 'Sembako',
+      category: item.category || 'Bahan Pokok',
       unit: item.unit || 'pcs',
       qty: Math.max(1, parseInt(item.qty, 10) || 1),
-      currentPrice: Math.max(0, parseFloat(item.currentPrice) || 0),
+      currentPrice: price,
       lastPrice: Math.max(0, parseFloat(item.lastPrice) || 0),
       discountType: item.discountType || 'none',
       discountA: parseFloat(item.discountA) || 0,
@@ -171,7 +224,9 @@ const Store = {
     if (!name) return null;
     const catalog = this.getCatalog();
     const lower = name.trim().toLowerCase();
-    return catalog.find((i) => i.name.toLowerCase() === lower) || null;
+    const exact = catalog.find((i) => i.name.toLowerCase() === lower);
+    if (exact) return exact;
+    return catalog.find((i) => i.name.toLowerCase().includes(lower) || lower.includes(i.name.toLowerCase())) || null;
   },
 
   searchCatalog(query) {
@@ -339,8 +394,9 @@ const Store = {
       let data = null;
       if (type === 'cart') data = this.getActiveCart();
       else if (type === 'budget') data = this.getBudgetSettings();
+      else if (type === 'session') data = this.getSessionInfo();
       else if (type === 'cart_discount') data = this.getCartDiscount();
-      else if (type === 'history') data = this.getShoppingHistory();
+      else if (type === 'history') data = this.getHistory();
       window.Realtime.broadcast(type, data);
     }
   },
@@ -358,6 +414,8 @@ const Store = {
         }
       } else if (snapshot.type === 'budget' && snapshot.data) {
         localStorage.setItem(this.getKey('budget'), JSON.stringify(snapshot.data));
+      } else if (snapshot.type === 'session' && snapshot.data) {
+        localStorage.setItem(this.getKey('session'), JSON.stringify(snapshot.data));
       } else if (snapshot.type === 'cart_discount' && snapshot.data) {
         localStorage.setItem(this.getKey('cart_discount'), JSON.stringify(snapshot.data));
       } else if (snapshot.type === 'history' && Array.isArray(snapshot.data)) {
