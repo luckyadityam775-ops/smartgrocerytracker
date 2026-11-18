@@ -55,113 +55,121 @@
   <!-- Mobile Simulator Wrapper (Max-width 430px centered on desktop) -->
   <div id="app-container" class="relative w-full max-w-[430px] mx-auto min-h-screen bg-slate-900 flex flex-col shadow-2xl">
     
-    <!-- Top PWA Install Banner (Optional prompt) -->
-    <div id="pwa-install-banner" class="hidden bg-emerald-950/80 border-b border-emerald-500/30 px-3.5 py-2 text-xs flex items-center justify-between text-emerald-200">
-      <div class="flex items-center gap-2">
-        <i data-lucide="smartphone" class="w-4 h-4 text-emerald-400"></i>
-        <span>Pasang aplikasi di layar utama HP?</span>
-      </div>
-      <div class="flex items-center gap-1.5">
-        <button id="btn-pwa-install" class="px-2.5 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[10px] touch-scale">Install</button>
-        <button id="btn-pwa-dismiss" class="p-1 text-slate-400 hover:text-white"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
-      </div>
+    <!-- Formal Login & Sign Up Gatekeeper (Visible when not logged in) -->
+    <div id="auth-gatekeeper" class="hidden min-h-screen flex flex-col justify-between p-4 sm:p-5 bg-[#0b0f19]">
+      <!-- Populated dynamically by UI.renderAuthGatekeeper() -->
     </div>
 
-    <!-- App Brand Top Bar -->
-    <header class="px-4 pt-3 pb-2 flex items-center justify-between bg-slate-900 border-b border-slate-800/60">
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-900/30">
-          <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+    <!-- Main App Shell (Visible when user is logged in) -->
+    <div id="main-app-shell" class="flex-1 flex flex-col min-h-screen">
+      <!-- Top PWA Install Banner (Optional prompt) -->
+      <div id="pwa-install-banner" class="hidden bg-emerald-950/80 border-b border-emerald-500/30 px-3.5 py-2 text-xs flex items-center justify-between text-emerald-200">
+        <div class="flex items-center gap-2">
+          <i data-lucide="smartphone" class="w-4 h-4 text-emerald-400"></i>
+          <span>Pasang aplikasi di layar utama HP?</span>
         </div>
-        <div>
-          <h1 class="text-sm font-extrabold tracking-tight text-white flex items-center gap-1.5">
-            <span>GrocerySafe</span>
-            <span class="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">DT2</span>
-          </h1>
-          <p class="text-[10px] text-slate-400 font-medium">SMA Mutiara Bangsa 2 • Smart Grocery Tracker</p>
-        </div>
-      </div>
-      
-      <div class="flex items-center gap-1.5">
-        <button id="btn-realtime-status" class="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 touch-scale transition-all" title="Status Realtime onSnapshot">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span id="realtime-badge-text">LIVE</span>
-        </button>
-
-        <div id="header-profile-btn" class="flex items-center gap-1.5 cursor-pointer touch-scale p-1 rounded-xl hover:bg-slate-800 transition touch-target-44" title="Ganti / Kelola Akun">
-          <!-- Injected by UI.renderAppHeader() -->
+        <div class="flex items-center gap-1.5">
+          <button id="btn-pwa-install" class="px-2.5 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[10px] touch-scale">Install</button>
+          <button id="btn-pwa-dismiss" class="p-1 text-slate-400 hover:text-white"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
         </div>
       </div>
-    </header>
 
-    <!-- [F-05] STICKY TOP BUDGET SAFETY CAP HEADER -->
-    <div id="sticky-budget-header">
-      <!-- Reactive render from UI.renderBudgetHeader() -->
+      <!-- App Brand Top Bar -->
+      <header class="px-4 pt-3 pb-2 flex items-center justify-between bg-slate-900 border-b border-slate-800/60">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-900/30">
+            <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h1 class="text-sm font-extrabold tracking-tight text-white flex items-center gap-1.5">
+              <span>GrocerySafe</span>
+              <span class="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">DT2</span>
+            </h1>
+            <p class="text-[10px] text-slate-400 font-medium">SMA Mutiara Bangsa 2 • Smart Grocery Tracker</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-1.5">
+          <button id="btn-realtime-status" class="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 touch-scale transition-all" title="Status Realtime onSnapshot">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="realtime-badge-text">LIVE</span>
+          </button>
+
+          <div id="header-profile-btn" class="flex items-center gap-1.5 cursor-pointer touch-scale p-1 rounded-xl hover:bg-slate-800 transition touch-target-44" title="Ganti / Kelola Akun">
+            <!-- Injected by UI.renderAppHeader() -->
+          </div>
+        </div>
+      </header>
+
+      <!-- [F-05] STICKY TOP BUDGET SAFETY CAP HEADER -->
+      <div id="sticky-budget-header">
+        <!-- Reactive render from UI.renderBudgetHeader() -->
+      </div>
+
+      <!-- MAIN SCROLLABLE VIEWS -->
+      <main class="flex-1 overflow-y-auto">
+        <!-- Tab 1: Belanja (Input & List Keranjang Aktif) [F-01, F-02, F-03, F-04] -->
+        <section id="tab-content-belanja" class="w-full">
+          <!-- Rendered by UI.renderBelanjaTab() -->
+        </section>
+
+        <!-- Tab 2: Riwayat (Catatan Belanja & Trend Pengeluaran) [F-06] -->
+        <section id="tab-content-riwayat" class="w-full hidden">
+          <!-- Rendered by UI.renderRiwayatTab() -->
+        </section>
+
+        <!-- Tab 3: Anggaran (Pengaturan Saldo & Ringkasan Kategori) -->
+        <section id="tab-content-anggaran" class="w-full hidden">
+          <!-- Rendered by UI.renderAnggaranTab() -->
+        </section>
+
+        <!-- Tab 4: Akun (Kelola & Ganti Akun Pengguna) -->
+        <section id="tab-content-akun" class="w-full hidden">
+          <!-- Rendered by UI.renderAkunTab() -->
+        </section>
+      </main>
+
+      <!-- FIXED FLOATING BOTTOM NAVIGATION BAR (Ergonomi Mobile Jempol) -->
+      <nav id="bottom-navigation-bar" class="fixed bottom-0 left-0 right-0 z-40 flex justify-center pointer-events-none">
+        <div class="w-full max-w-[430px] px-3 pb-3 pt-1 pointer-events-auto">
+          <div class="glass-panel rounded-3xl border border-slate-700/80 shadow-2xl p-1.5 flex items-center justify-around">
+            
+            <!-- Tab 1: Belanja -->
+            <button class="nav-tab-btn flex-1 min-h-[48px] py-1.5 flex flex-col items-center justify-center text-emerald-400 touch-scale transition-colors touch-target-44" data-tab="belanja">
+              <span class="nav-icon-wrapper p-1 rounded-xl bg-emerald-500/20 text-emerald-400 transition-all">
+                <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+              </span>
+              <span class="nav-text text-[11px] mt-0.5 font-bold tracking-tight">Belanja</span>
+            </button>
+
+            <!-- Tab 2: Riwayat -->
+            <button class="nav-tab-btn flex-1 min-h-[48px] py-1.5 flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 touch-scale transition-colors touch-target-44" data-tab="riwayat">
+              <span class="nav-icon-wrapper p-1 rounded-xl text-slate-400 transition-all">
+                <i data-lucide="history" class="w-5 h-5"></i>
+              </span>
+              <span class="nav-text text-[11px] mt-0.5 tracking-tight">Riwayat</span>
+            </button>
+
+            <!-- Tab 3: Anggaran -->
+            <button class="nav-tab-btn flex-1 min-h-[48px] py-1.5 flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 touch-scale transition-colors touch-target-44" data-tab="anggaran">
+              <span class="nav-icon-wrapper p-1 rounded-xl text-slate-400 transition-all">
+                <i data-lucide="wallet" class="w-5 h-5"></i>
+              </span>
+              <span class="nav-text text-[11px] mt-0.5 tracking-tight">Anggaran</span>
+            </button>
+
+            <!-- Tab 4: Akun -->
+            <button class="nav-tab-btn flex-1 min-h-[48px] py-1.5 flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 touch-scale transition-colors touch-target-44" data-tab="akun">
+              <span class="nav-icon-wrapper p-1 rounded-xl text-slate-400 transition-all">
+                <i data-lucide="user" class="w-5 h-5"></i>
+              </span>
+              <span class="nav-text text-[11px] mt-0.5 tracking-tight">Akun</span>
+            </button>
+
+          </div>
+        </div>
+      </nav>
     </div>
-
-    <!-- MAIN SCROLLABLE VIEWS -->
-    <main class="flex-1 overflow-y-auto">
-      <!-- Tab 1: Belanja (Input & List Keranjang Aktif) [F-01, F-02, F-03, F-04] -->
-      <section id="tab-content-belanja" class="w-full">
-        <!-- Rendered by UI.renderBelanjaTab() -->
-      </section>
-
-      <!-- Tab 2: Riwayat (Catatan Belanja & Trend Pengeluaran) [F-06] -->
-      <section id="tab-content-riwayat" class="w-full hidden">
-        <!-- Rendered by UI.renderRiwayatTab() -->
-      </section>
-
-      <!-- Tab 3: Anggaran (Pengaturan Saldo & Ringkasan Kategori) -->
-      <section id="tab-content-anggaran" class="w-full hidden">
-        <!-- Rendered by UI.renderAnggaranTab() -->
-      </section>
-
-      <!-- Tab 4: Akun (Kelola & Ganti Akun Pengguna) -->
-      <section id="tab-content-akun" class="w-full hidden">
-        <!-- Rendered by UI.renderAkunTab() -->
-      </section>
-    </main>
-
-    <!-- FIXED FLOATING BOTTOM NAVIGATION BAR (Ergonomi Mobile Jempol) -->
-    <nav class="fixed bottom-0 left-0 right-0 z-40 flex justify-center pointer-events-none">
-      <div class="w-full max-w-[430px] px-3 pb-3 pt-1 pointer-events-auto">
-        <div class="glass-panel rounded-3xl border border-slate-700/80 shadow-2xl p-1.5 flex items-center justify-around">
-          
-          <!-- Tab 1: Belanja -->
-          <button class="nav-tab-btn flex-1 min-h-[48px] py-1.5 flex flex-col items-center justify-center text-emerald-400 touch-scale transition-colors touch-target-44" data-tab="belanja">
-            <span class="nav-icon-wrapper p-1 rounded-xl bg-emerald-500/20 text-emerald-400 transition-all">
-              <i data-lucide="shopping-cart" class="w-5 h-5"></i>
-            </span>
-            <span class="nav-text text-[11px] mt-0.5 font-bold tracking-tight">Belanja</span>
-          </button>
-
-          <!-- Tab 2: Riwayat -->
-          <button class="nav-tab-btn flex-1 min-h-[48px] py-1.5 flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 touch-scale transition-colors touch-target-44" data-tab="riwayat">
-            <span class="nav-icon-wrapper p-1 rounded-xl text-slate-400 transition-all">
-              <i data-lucide="history" class="w-5 h-5"></i>
-            </span>
-            <span class="nav-text text-[11px] mt-0.5 tracking-tight">Riwayat</span>
-          </button>
-
-          <!-- Tab 3: Anggaran -->
-          <button class="nav-tab-btn flex-1 min-h-[48px] py-1.5 flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 touch-scale transition-colors touch-target-44" data-tab="anggaran">
-            <span class="nav-icon-wrapper p-1 rounded-xl text-slate-400 transition-all">
-              <i data-lucide="wallet" class="w-5 h-5"></i>
-            </span>
-            <span class="nav-text text-[11px] mt-0.5 tracking-tight">Anggaran</span>
-          </button>
-
-          <!-- Tab 4: Akun -->
-          <button class="nav-tab-btn flex-1 min-h-[48px] py-1.5 flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 touch-scale transition-colors touch-target-44" data-tab="akun">
-            <span class="nav-icon-wrapper p-1 rounded-xl text-slate-400 transition-all">
-              <i data-lucide="user" class="w-5 h-5"></i>
-            </span>
-            <span class="nav-text text-[11px] mt-0.5 tracking-tight">Akun</span>
-          </button>
-
-        </div>
-      </div>
-    </nav>
 
     <!-- MODAL CONTAINER (Dynamic Bottom Sheet / Modals) -->
     <div id="modal-container" class="hidden"></div>
@@ -171,6 +179,10 @@
   <!-- Firebase SDK for Cloud Firestore Realtime onSnapshot (Optional Cloud Sync) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <!-- Supabase SDK for Cloud Auth & Google OAuth -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase-config.js"></script>
 
   <!-- Firebase Configuration & Modules -->
   <script src="./js/firebase-config.js"></script>

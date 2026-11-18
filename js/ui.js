@@ -1342,9 +1342,6 @@ const UI = {
       modal.classList.add('hidden');
     });
   },
-      modal.classList.add('hidden');
-    });
-  },
 
   /**
    * Modal: Konfirmasi Selesai & Simpan Belanja [F-06]
@@ -2195,6 +2192,17 @@ const UI = {
                 <span class="text-xs font-extrabold text-emerald-400 mt-0.5 block">${cart.length} item</span>
               </div>
             </div>
+
+            <div class="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+              <button id="btn-account-supabase-config" class="flex-1 py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold flex items-center justify-center gap-1.5 touch-scale transition border border-slate-700">
+                <i data-lucide="key" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>OAuth Supabase</span>
+              </button>
+              <button id="btn-account-logout" class="flex-1 py-2 px-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 text-[11px] font-bold flex items-center justify-center gap-1.5 touch-scale transition border border-rose-500/30">
+                <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                <span>Keluar (Logout)</span>
+              </button>
+            </div>
           </div>
         ` : ''}
 
@@ -2399,12 +2407,493 @@ const UI = {
         this.showToast(res.message, 'error');
       }
     });
+
+    // Handle Supabase OAuth Config
+    document.getElementById('btn-account-supabase-config')?.addEventListener('click', () => {
+      this.openSupabaseConfigModal();
+    });
+
+    // Handle Logout
+    document.getElementById('btn-account-logout')?.addEventListener('click', () => {
+      this.openConfirmModal({
+        title: 'Keluar dari Akun',
+        message: 'Apakah Anda yakin ingin keluar dari akun ini dan kembali ke halaman login?',
+        confirmText: 'Ya, Keluar',
+        cancelText: 'Batal',
+        onConfirm: () => {
+          window.Auth.logout();
+          this.vibrate(40);
+          this.showToast('Berhasil keluar dari akun.');
+          this.render();
+        }
+      });
+    });
+  },
+
+  /**
+   * Render Formal Auth Gatekeeper (Login & Sign Up Screen)
+   */
+  renderAuthGatekeeper() {
+    const container = document.getElementById('auth-gatekeeper');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="w-full max-w-sm mx-auto flex flex-col justify-between min-h-screen py-4 sm:py-6">
+        
+        <!-- Top School & App Identity -->
+        <div>
+          <div class="text-center mb-5">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold mb-3 shadow-sm">
+              <i data-lucide="school" class="w-3.5 h-3.5"></i>
+              <span>SMA Mutiara Bangsa 2 • Evaluasi DT2</span>
+            </div>
+            
+            <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-xl shadow-emerald-950/60 mb-2.5">
+              <i data-lucide="shopping-cart" class="w-7 h-7"></i>
+            </div>
+
+            <h1 class="text-xl font-extrabold text-white tracking-tight">Smart Grocery Tracker</h1>
+            <p class="text-xs text-slate-400 mt-1 max-w-[280px] mx-auto">Sistem Belanja Cerdas, Budget Safety Cap & Fluktuasi Harga Realtime</p>
+          </div>
+
+          <!-- Main Auth Card -->
+          <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-2xl relative overflow-hidden">
+            
+            <!-- Segmented Switcher: [Masuk] / [Daftar Akun Baru] -->
+            <div class="flex rounded-2xl bg-slate-950 p-1 mb-4 border border-slate-800">
+              <button id="gatekeeper-tab-login" class="flex-1 py-2.5 text-xs font-bold rounded-xl bg-emerald-600 text-white transition touch-scale flex items-center justify-center gap-1.5">
+                <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+                <span>Masuk</span>
+              </button>
+              <button id="gatekeeper-tab-register" class="flex-1 py-2.5 text-xs font-bold rounded-xl text-slate-400 hover:text-white transition touch-scale flex items-center justify-center gap-1.5">
+                <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+                <span>Daftar Akun Baru</span>
+              </button>
+            </div>
+
+            <!-- Error Banner (Dynamic) -->
+            <div id="gatekeeper-error-box" class="hidden mb-3.5 p-3 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2 animate-shake">
+              <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400 shrink-0 mt-0.5"></i>
+              <span id="gatekeeper-error-msg" class="flex-1 font-medium leading-tight"></span>
+            </div>
+
+            <!-- FORM 1: MASUK (LOGIN) -->
+            <form id="gatekeeper-form-login" class="space-y-3.5">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1.5">Email atau Nama Akun *</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i data-lucide="mail" class="w-4 h-4"></i>
+                  </div>
+                  <input type="text" id="gatekeeper-login-id" required placeholder="Contoh: rian@kost.id atau Rian" 
+                    class="w-full bg-slate-800/90 border border-slate-700 rounded-2xl pl-10 pr-3.5 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition">
+                </div>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="block text-[11px] font-semibold text-slate-300">Password *</label>
+                  <span class="text-[10px] text-slate-400">Demo password: <span class="text-emerald-400 font-mono font-bold">123</span></span>
+                </div>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i data-lucide="lock" class="w-4 h-4"></i>
+                  </div>
+                  <input type="password" id="gatekeeper-login-pass" required placeholder="Masukkan password Anda" 
+                    class="w-full bg-slate-800/90 border border-slate-700 rounded-2xl pl-10 pr-10 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition">
+                  <button type="button" id="btn-toggle-login-pass" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200">
+                    <i data-lucide="eye" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" class="w-full min-h-[46px] py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 touch-scale transition">
+                <i data-lucide="log-in" class="w-4 h-4"></i>
+                <span>Masuk ke Aplikasi</span>
+              </button>
+
+              <div class="text-center pt-1">
+                <button type="button" id="link-to-register" class="text-[11px] text-slate-400 hover:text-emerald-400 transition">
+                  Belum punya akun? <span class="text-emerald-400 font-bold underline">Daftar sekarang</span>
+                </button>
+              </div>
+            </form>
+
+            <!-- FORM 2: DAFTAR AKUN BARU (SIGN UP) -->
+            <form id="gatekeeper-form-reg" class="space-y-3 hidden">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Nama Lengkap *</label>
+                <input type="text" id="gatekeeper-reg-name" required placeholder="Contoh: Siti Rahma" 
+                  class="w-full bg-slate-800/90 border border-slate-700 rounded-2xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition">
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Email *</label>
+                <input type="email" id="gatekeeper-reg-email" required placeholder="nama@email.com" 
+                  class="w-full bg-slate-800/90 border border-slate-700 rounded-2xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition">
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-300 mb-1">Status / Peran</label>
+                  <select id="gatekeeper-reg-role" class="w-full bg-slate-800/90 border border-slate-700 rounded-2xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
+                    <option value="Siswa Rantau">Siswa Rantau</option>
+                    <option value="Mahasiswa">Mahasiswa</option>
+                    <option value="Ibu Rumah Tangga">Ibu Rumah Tangga</option>
+                    <option value="Umum">Umum</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-300 mb-1">Batas Dompet (Rp)</label>
+                  <input type="number" id="gatekeeper-reg-budget" value="500000" step="50000" inputmode="numeric" 
+                    class="w-full bg-slate-800/90 border border-slate-700 rounded-2xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-300 mb-1">Password *</label>
+                  <input type="password" id="gatekeeper-reg-pass" required minlength="3" placeholder="Min. 3 karakter" 
+                    class="w-full bg-slate-800/90 border border-slate-700 rounded-2xl px-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-300 mb-1">Konfirmasi *</label>
+                  <input type="password" id="gatekeeper-reg-confirm" required minlength="3" placeholder="Ulangi password" 
+                    class="w-full bg-slate-800/90 border border-slate-700 rounded-2xl px-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition">
+                </div>
+              </div>
+
+              <button type="submit" class="w-full min-h-[46px] mt-1 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 touch-scale transition">
+                <i data-lucide="user-check" class="w-4 h-4"></i>
+                <span>Daftar Akun Baru</span>
+              </button>
+
+              <div class="text-center pt-1">
+                <button type="button" id="link-to-login" class="text-[11px] text-slate-400 hover:text-emerald-400 transition">
+                  Sudah punya akun? <span class="text-emerald-400 font-bold underline">Masuk di sini</span>
+                </button>
+              </div>
+            </form>
+
+            <!-- SSO DIVIDER -->
+            <div class="relative flex items-center justify-center my-4">
+              <div class="border-t border-slate-800 w-full"></div>
+              <span class="bg-slate-900 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0">atau lanjutkan dengan</span>
+              <div class="border-t border-slate-800 w-full"></div>
+            </div>
+
+            <!-- GOOGLE OAUTH BUTTON (SUPABASE) -->
+            <button type="button" id="btn-gatekeeper-google" class="w-full min-h-[46px] py-2.5 px-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs flex items-center justify-center gap-3 shadow-md hover:shadow-lg transition-all touch-scale border border-slate-200">
+              <svg class="w-4 h-4" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              <span>Lanjutkan dengan Google</span>
+            </button>
+            <p class="text-[9px] text-center text-slate-400 mt-1.5 flex items-center justify-center gap-1">
+              <i data-lucide="shield" class="w-3 h-3 text-emerald-400"></i>
+              <span>Otentikasi aman via Supabase OAuth Provider</span>
+            </p>
+
+          </div>
+        </div>
+
+        <!-- LAB DT2 QUICK DEMO ACCESS (Bottom Footer Card) -->
+        <div class="mt-4 pt-3 border-t border-slate-800/80">
+          <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1.5">
+                <i data-lucide="flask-conical" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>Akses Pengujian Lab DT2 (1-Tap):</span>
+              </span>
+              <span class="text-[9px] text-emerald-400 font-mono font-bold">Lotte Mart Ready</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" class="btn-gatekeeper-quick-demo py-2 px-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-left border border-slate-700/80 touch-scale transition" data-user="user_rian">
+                <span class="text-xs font-bold text-white block">👤 Rian (DT2)</span>
+                <span class="text-[9px] text-emerald-400">Lotte Mart • 500rb</span>
+              </button>
+              <button type="button" class="btn-gatekeeper-quick-demo py-2 px-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-left border border-slate-700/80 touch-scale transition" data-user="user_aditya">
+                <span class="text-xs font-bold text-white block">👤 Aditya</span>
+                <span class="text-[9px] text-indigo-400">Mahasiswa • 750rb</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    if (window.lucide) lucide.createIcons();
+    this.bindGatekeeperEvents();
+  },
+
+  /**
+   * Bind event listeners for the Gatekeeper login/register screen
+   */
+  bindGatekeeperEvents() {
+    const tabLogin = document.getElementById('gatekeeper-tab-login');
+    const tabReg = document.getElementById('gatekeeper-tab-register');
+    const formLogin = document.getElementById('gatekeeper-form-login');
+    const formReg = document.getElementById('gatekeeper-form-reg');
+    const errorBox = document.getElementById('gatekeeper-error-box');
+    const errorMsg = document.getElementById('gatekeeper-error-msg');
+    const linkReg = document.getElementById('link-to-register');
+    const linkLogin = document.getElementById('link-to-login');
+
+    const showLoginTab = () => {
+      tabLogin.className = 'flex-1 py-2.5 text-xs font-bold rounded-xl bg-emerald-600 text-white transition touch-scale flex items-center justify-center gap-1.5';
+      tabReg.className = 'flex-1 py-2.5 text-xs font-bold rounded-xl text-slate-400 hover:text-white transition touch-scale flex items-center justify-center gap-1.5';
+      formLogin.classList.remove('hidden');
+      formReg.classList.add('hidden');
+      if (errorBox) errorBox.classList.add('hidden');
+    };
+
+    const showRegTab = () => {
+      tabReg.className = 'flex-1 py-2.5 text-xs font-bold rounded-xl bg-emerald-600 text-white transition touch-scale flex items-center justify-center gap-1.5';
+      tabLogin.className = 'flex-1 py-2.5 text-xs font-bold rounded-xl text-slate-400 hover:text-white transition touch-scale flex items-center justify-center gap-1.5';
+      formReg.classList.remove('hidden');
+      formLogin.classList.add('hidden');
+      if (errorBox) errorBox.classList.add('hidden');
+    };
+
+    tabLogin?.addEventListener('click', showLoginTab);
+    tabReg?.addEventListener('click', showRegTab);
+    linkReg?.addEventListener('click', showRegTab);
+    linkLogin?.addEventListener('click', showLoginTab);
+
+    // Toggle password visibility
+    const togglePassBtn = document.getElementById('btn-toggle-login-pass');
+    const passInput = document.getElementById('gatekeeper-login-pass');
+    togglePassBtn?.addEventListener('click', () => {
+      if (passInput) {
+        const isPass = passInput.type === 'password';
+        passInput.type = isPass ? 'text' : 'password';
+        togglePassBtn.innerHTML = `<i data-lucide="${isPass ? 'eye-off' : 'eye'}" class="w-4 h-4"></i>`;
+        if (window.lucide) lucide.createIcons();
+      }
+    });
+
+    // Handle Login Submit
+    formLogin?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const identifier = document.getElementById('gatekeeper-login-id')?.value;
+      const password = document.getElementById('gatekeeper-login-pass')?.value;
+
+      const res = window.Auth.login(identifier, password);
+      if (res.success) {
+        if (errorBox) errorBox.classList.add('hidden');
+        this.vibrate(40);
+        this.showToast(res.message || `Selamat datang, ${res.user.name}!`);
+        this.render();
+      } else {
+        this.vibrate([50, 50]);
+        if (errorBox && errorMsg) {
+          errorMsg.textContent = res.message;
+          errorBox.classList.remove('hidden');
+        } else {
+          this.showToast(res.message, 'error');
+        }
+      }
+    });
+
+    // Handle Register Submit
+    formReg?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('gatekeeper-reg-name')?.value;
+      const email = document.getElementById('gatekeeper-reg-email')?.value;
+      const role = document.getElementById('gatekeeper-reg-role')?.value || 'Siswa Rantau';
+      const budget = document.getElementById('gatekeeper-reg-budget')?.value || 500000;
+      const pass = document.getElementById('gatekeeper-reg-pass')?.value;
+      const confirm = document.getElementById('gatekeeper-reg-confirm')?.value;
+
+      if (pass !== confirm) {
+        this.vibrate([50, 50]);
+        if (errorBox && errorMsg) {
+          errorMsg.textContent = 'Konfirmasi password tidak cocok! Silakan periksa kembali.';
+          errorBox.classList.remove('hidden');
+        } else {
+          this.showToast('Konfirmasi password tidak cocok!', 'error');
+        }
+        return;
+      }
+
+      const res = window.Auth.register({
+        name,
+        email,
+        password: pass,
+        role,
+        monthlyLimit: budget
+      });
+
+      if (res.success) {
+        if (errorBox) errorBox.classList.add('hidden');
+        this.vibrate([50, 100]);
+        this.showToast(res.message || `Pendaftaran berhasil! Selamat datang, ${res.user.name}.`);
+        this.render();
+      } else {
+        this.vibrate([50, 50]);
+        if (errorBox && errorMsg) {
+          errorMsg.textContent = res.message;
+          errorBox.classList.remove('hidden');
+        } else {
+          this.showToast(res.message, 'error');
+        }
+      }
+    });
+
+    // Handle Google OAuth Button
+    document.getElementById('btn-gatekeeper-google')?.addEventListener('click', () => {
+      window.Auth.loginWithGoogle();
+    });
+
+    // Handle Quick Demo buttons
+    document.querySelectorAll('.btn-gatekeeper-quick-demo').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const userId = btn.getAttribute('data-user');
+        const success = window.Auth.switchAccount(userId);
+        if (success) {
+          const user = window.Auth.getCurrentUser();
+          this.vibrate(40);
+          this.showToast(`Masuk sebagai ${user.name} (Evaluasi Lab DT2)`);
+          this.render();
+        }
+      });
+    });
+  },
+
+  /**
+   * Modal to configure Supabase API Key for Google OAuth
+   */
+  openSupabaseConfigModal() {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const currentKey = window.SUPABASE_CONFIG.getAnonKey();
+
+    modalContainer.className = 'fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in';
+    modalContainer.innerHTML = `
+      <div class="glass-panel w-full max-w-sm rounded-3xl p-5 border border-slate-700 shadow-2xl animate-slide-up space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <i data-lucide="key" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-extrabold text-white">Google OAuth Supabase</h3>
+              <p class="text-[10px] text-slate-400">Pengaturan Kunci API Supabase</p>
+            </div>
+          </div>
+          <button id="btn-close-supabase-modal" class="p-1 rounded-lg text-slate-400 hover:text-white">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <div class="space-y-2.5 text-xs">
+          <div class="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1.5">
+            <div class="flex justify-between items-center text-[10px]">
+              <span class="text-slate-400">Project URL:</span>
+              <span class="text-emerald-400 font-mono font-bold">pynraezkvnqtidmljdkk</span>
+            </div>
+            <p class="text-[10px] text-slate-300 truncate font-mono">https://pynraezkvnqtidmljdkk.supabase.co</p>
+            
+            <div class="flex justify-between items-center text-[10px] pt-1.5 border-t border-slate-800">
+              <span class="text-slate-400">OAuth Callback URL:</span>
+              <button id="btn-copy-callback-url" class="text-emerald-400 hover:underline flex items-center gap-1 font-bold">
+                <i data-lucide="copy" class="w-3 h-3"></i> Salin
+              </button>
+            </div>
+            <p class="text-[9px] text-slate-400 truncate font-mono">https://pynraezkvnqtidmljdkk.supabase.co/auth/v1/callback</p>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Supabase Anon Key (Public API Key):</label>
+            <textarea id="input-supabase-anon-key" rows="3" placeholder="Tempelkan Supabase anon public key Anda di sini (eyJhbGciOi...)" 
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-emerald-500">${currentKey}</textarea>
+            <p class="text-[10px] text-slate-400 mt-1">
+              *Dapatkan dari: Supabase Dashboard &rarr; Project Settings &rarr; API &rarr; Project API keys &rarr; anon public.
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-2 pt-2 border-t border-slate-800">
+          <button id="btn-save-supabase-config" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md touch-scale transition flex items-center justify-center gap-1.5">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Simpan & Hubungkan Google</span>
+          </button>
+          
+          <button id="btn-demo-google-login" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 touch-scale transition flex items-center justify-center gap-2">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span>Uji Coba Masuk Google (Mode Simulasi Demo)</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    if (window.lucide) lucide.createIcons();
+
+    document.getElementById('btn-close-supabase-modal')?.addEventListener('click', () => {
+      modalContainer.className = 'hidden';
+      modalContainer.innerHTML = '';
+    });
+
+    document.getElementById('btn-copy-callback-url')?.addEventListener('click', () => {
+      navigator.clipboard.writeText('https://pynraezkvnqtidmljdkk.supabase.co/auth/v1/callback');
+      this.showToast('Callback URL disalin ke clipboard!');
+    });
+
+    document.getElementById('btn-save-supabase-config')?.addEventListener('click', () => {
+      const val = document.getElementById('input-supabase-anon-key')?.value;
+      if (val && val.trim()) {
+        window.SUPABASE_CONFIG.setAnonKey(val.trim());
+        modalContainer.className = 'hidden';
+        modalContainer.innerHTML = '';
+        this.showToast('Supabase Anon Key berhasil disimpan! Menghubungkan Google...');
+        setTimeout(() => {
+          window.Auth.loginWithGoogle();
+        }, 300);
+      } else {
+        this.showToast('Silakan tempelkan Anon Key terlebih dahulu.', 'error');
+      }
+    });
+
+    document.getElementById('btn-demo-google-login')?.addEventListener('click', () => {
+      modalContainer.className = 'hidden';
+      modalContainer.innerHTML = '';
+      window.Auth.loginWithGoogleDemo();
+    });
   },
 
   /**
    * Full App Render Loop
    */
   render() {
+    const currentUser = window.Auth ? window.Auth.getCurrentUser() : null;
+    const gatekeeper = document.getElementById('auth-gatekeeper');
+    const mainShell = document.getElementById('main-app-shell');
+    const bottomNav = document.getElementById('bottom-navigation-bar');
+
+    // If no user is logged in, show Gatekeeper and hide app shell
+    if (!currentUser) {
+      if (gatekeeper) gatekeeper.classList.remove('hidden');
+      if (mainShell) mainShell.classList.add('hidden');
+      if (bottomNav) bottomNav.classList.add('hidden');
+      this.renderAuthGatekeeper();
+      return;
+    }
+
+    // User is logged in: hide Gatekeeper and show main app shell
+    if (gatekeeper) gatekeeper.classList.add('hidden');
+    if (mainShell) mainShell.classList.remove('hidden');
+    if (bottomNav) bottomNav.classList.remove('hidden');
+
     this.renderAppHeader();
 
     const budget = Store.getBudgetSettings();

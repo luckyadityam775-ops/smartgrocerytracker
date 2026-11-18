@@ -137,7 +137,7 @@
       }
 
       // 4. Sync to local LAN server endpoint (/api/sync)
-      if (typeof fetch === 'function' && typeof window !== 'undefined' && window.location.protocol && window.location.protocol.startsWith('http')) {
+      if (typeof fetch === 'function' && typeof window !== 'undefined' && window.location && window.location.protocol && window.location.protocol.startsWith('http')) {
         try {
           fetch('./api/sync', {
             method: 'POST',

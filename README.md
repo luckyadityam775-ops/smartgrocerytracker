@@ -63,6 +63,57 @@ Aplikasi web mobile (Progressive Web App) bergaya _native app_ yang dirancang kh
   - Fitur _1-Tap Account Switcher_ untuk beralih instan antar akun (misal: Rian vs Aditya).
   - Formulir registrasi akun baru langsung membuat ruang data bersih dan mandiri.
 
+- [x] **[Fitur Baru] Gerbang Login & Sign Up Formal (Gatekeeper)**:
+  - Antarmuka login formal sebelum masuk ke aplikasi utama.
+  - Validasi ketat: akun wajib didaftarkan (Sign Up) terlebih dahulu sebelum dapat login.
+  - Tab switcher instan antara **Masuk (Login)** dan **Daftar Akun Baru (Sign Up)**.
+  - Tombol **"Lanjutkan dengan Google"** terintegrasi dengan **Supabase Auth**.
+  - Quick Demo Card: Akses 1-Tap pengujian laboratorium untuk Rian (Lotte Mart Puri Indah) dan Aditya.
+
+---
+
+## 🔐 Integrasi Google OAuth via Supabase
+
+### 1. Data Konfigurasi Supabase Anda
+- **Project URL**: `https://pynraezkvnqtidmljdkk.supabase.co`
+- **OAuth Callback URL**: `https://pynraezkvnqtidmljdkk.supabase.co/auth/v1/callback`
+
+### 2. Panduan Langkah Demi Langkah Mendapatkan Google Client ID & Client Secret
+Untuk mengaktifkan tombol **Lanjutkan dengan Google**, ikuti langkah berikut:
+
+1. **Buka Google Cloud Console**:
+   - Masuk ke [https://console.cloud.google.com/](https://console.cloud.google.com/) menggunakan akun Google Anda.
+2. **Pilih atau Buat Project**:
+   - Di bilah atas, klik dropdown project &rarr; klik **"New Project"**.
+   - Beri nama proyek, contoh: `Smart Grocery Tracker` &rarr; klik **Create**.
+3. **Konfigurasi OAuth Consent Screen**:
+   - Buka menu **APIs & Services** &rarr; **OAuth consent screen**.
+   - Pilih User Type: **External** &rarr; klik **Create**.
+   - Isi **App name** (`Smart Grocery Tracker`), **User support email** (email Anda), dan **Developer contact information** (email Anda).
+   - Pada bagian **Scopes**, tambahkan `.../auth/userinfo.email`, `.../auth/userinfo.profile`, dan `openid`.
+   - Pada bagian **Test users**, tambahkan email Google yang akan dipakai login (atau klik **Publish App** agar bisa diakses semua pengguna).
+4. **Buat Kredensial OAuth (Credentials)**:
+   - Buka menu **APIs & Services** &rarr; **Credentials**.
+   - Klik **+ CREATE CREDENTIALS** &rarr; pilih **OAuth client ID**.
+   - Application type: Pilih **Web application**.
+   - Name: `Supabase Google Web Client`.
+   - **Authorized JavaScript origins**:
+     - Tambahkan: `https://pynraezkvnqtidmljdkk.supabase.co`
+     - (Opsional lokal): `http://localhost:8080` dan `http://127.0.0.1:8080`
+   - **Authorized redirect URIs (Sangat Penting)**:
+     - Klik **+ ADD URI** &rarr; tempelkan Callback URL dari Supabase:
+       `https://pynraezkvnqtidmljdkk.supabase.co/auth/v1/callback`
+   - Klik tombol **CREATE**.
+5. **Salin Kredensial ke Supabase Dashboard**:
+   - Salin **Client ID** dan **Client Secret** yang muncul di popup.
+   - Buka Supabase Dashboard &rarr; **Authentication** &rarr; **Providers** &rarr; **Google**.
+   - Tempelkan **Client ID** ke kolom `Client IDs`.
+   - Tempelkan **Client Secret** ke kolom `Client Secret (for OAuth)`.
+   - Pastikan toggle **Enable Sign in with Google** dalam posisi ON (hijau).
+   - Klik **Save**.
+6. **Hubungkan ke Aplikasi**:
+   - Di aplikasi Smart Grocery Tracker, klik tombol **"Lanjutkan dengan Google"**. Jika anon key belum diisi, jendela pengaturan akan memandu Anda menempelkan `anon public key` dari Supabase Dashboard (**Project Settings** &rarr; **API**).
+
 ---
 
 ## 🚀 Cara Menjalankan

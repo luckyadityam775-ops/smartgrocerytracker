@@ -35,9 +35,14 @@ const Auth = {
       });
     }
 
-    // Default to first user (Rian) if no active user session
-    if (!this.getCurrentUser() && users.length > 0) {
-      this.setActiveUser(users[0]);
+    // Auto-login only if session was previously active or explicitly requested via URL
+    const urlParams = (typeof window !== 'undefined' && window.location) ? new URLSearchParams(window.location.search) : null;
+    const forceDemo = urlParams && (urlParams.get('demo') === '1' || urlParams.get('user'));
+
+    if (forceDemo && !this.getCurrentUser() && users.length > 0) {
+      const requestedId = urlParams.get('user');
+      const targetUser = requestedId ? users.find(u => u.name.toLowerCase() === requestedId.toLowerCase() || u.id === requestedId) : users[0];
+      this.setActiveUser(targetUser || users[0]);
     }
 
     // Asynchronously synchronize with server database file /api/users
@@ -108,18 +113,16 @@ const Auth = {
   },
 
   /**
-   * Login user with email/name and password.
-   * Zero-friction:
-   * 1. Matches email, name, fullName, or ID (case-insensitive, trimmed, partial match).
-   * 2. Automatically tolerant to trailing spaces or password case.
-   * 3. If account does not exist on this device yet, AUTO-CREATES it and logs in immediately so the user is NEVER blocked!
+   * Formal Login with strict validation:
+   * 1. Requires existing account (must sign up first if not registered).
+   * 2. Checks password match.
    */
-  login(identifier, password = '123') {
+  login(identifier, password = '') {
     if (!identifier || !identifier.trim()) {
-      return { success: false, message: 'Silakan ketik email atau nama akun Anda!' };
+      return { success: false, code: 'EMPTY_IDENTIFIER', message: 'Silakan ketik email atau nama akun Anda!' };
     }
     const cleanId = identifier.trim().toLowerCase();
-    const cleanPass = password ? String(password).trim() : '123';
+    const cleanPass = password ? String(password).trim() : '';
 
     let users = this.getAllUsers();
     if (!users || users.length === 0) {
@@ -139,7 +142,7 @@ const Auth = {
       (u.id && u.id.trim().toLowerCase() === cleanId)
     );
 
-    // 2. Partial match fallback (e.g. "Rian" in "Rian (Anak Rantau)" or name without domains)
+    // 2. Partial match fallback (e.g. "Rian" in "Rian (Anak Rantau)")
     if (!user) {
       user = users.find(u => 
         (u.email && u.email.toLowerCase().includes(cleanId)) ||
@@ -148,46 +151,40 @@ const Auth = {
       );
     }
 
-    if (user) {
-      // User found! Auto-update password if typed so user is never locked out by typos
-      if (cleanPass && user.password && String(user.password).trim() !== cleanPass) {
-        user.password = cleanPass;
-        this.saveUsers(users);
-      }
-      this.setActiveUser(user);
-      return { success: true, user, message: `Selamat datang kembali, ${user.name}!` };
-    }
-
-    // 3. User NOT found on this device! Auto-create account so user is NEVER blocked!
-    let derivedName = identifier.trim();
-    if (derivedName.includes('@')) {
-      derivedName = derivedName.split('@')[0];
-    }
-    derivedName = derivedName.charAt(0).toUpperCase() + derivedName.slice(1);
-
-    const regResult = this.register({
-      name: derivedName,
-      email: identifier.includes('@') ? cleanId : `${cleanId}@kost.id`,
-      password: cleanPass || '123',
-      role: 'Pengguna',
-      monthlyLimit: 500000
-    });
-
-    if (regResult.success) {
+    // If account not found, REQUIRE sign up first!
+    if (!user) {
       return { 
-        success: true, 
-        user: regResult.user, 
-        message: `Akun ${regResult.user.name} berhasil dibuat & langsung masuk!` 
+        success: false, 
+        code: 'USER_NOT_FOUND', 
+        message: 'Akun dengan email/nama ini belum terdaftar! Silakan klik tab "Daftar Akun Baru" terlebih dahulu untuk membuat akun.' 
       };
     }
 
-    return { success: false, message: 'Gagal memproses akun. Silakan coba lagi.' };
+    // Check password if set
+    if (user.password && cleanPass) {
+      if (String(user.password).trim() !== cleanPass) {
+        return { 
+          success: false, 
+          code: 'WRONG_PASSWORD', 
+          message: 'Password salah! Periksa kembali password Anda atau gunakan akun demo.' 
+        };
+      }
+    } else if (user.password && !cleanPass) {
+      return {
+        success: false,
+        code: 'EMPTY_PASSWORD',
+        message: 'Silakan masukkan password akun Anda!'
+      };
+    }
+
+    this.setActiveUser(user);
+    return { success: true, user, message: `Selamat datang kembali, ${user.name}!` };
   },
 
   /**
    * Register a new user with dedicated isolated storage
    */
-  register({ name, email, password, role = 'Anak Kost', monthlyLimit = 500000, emergencyReserve = 50000 }) {
+  register({ name, email, password, role = 'Anak Kost', monthlyLimit = 500000, emergencyReserve = 50000, avatarUrl = '' }) {
     if (!name || !name.trim()) {
       return { success: false, message: 'Nama lengkap wajib diisi!' };
     }
@@ -201,11 +198,11 @@ const Auth = {
     const cleanEmail = email.trim().toLowerCase();
 
     // Check if email already taken
-    if (users.some(u => u.email.toLowerCase() === cleanEmail)) {
-      return { success: false, message: 'Email sudah terdaftar. Silakan gunakan email lain atau masuk.' };
+    if (users.some(u => u.email && u.email.toLowerCase() === cleanEmail)) {
+      return { success: false, message: 'Email sudah terdaftar. Silakan gunakan email lain atau masuk ke akun Anda.' };
     }
 
-    const colors = ['bg-purple-600', 'bg-blue-600', 'bg-teal-600', 'bg-rose-600', 'bg-amber-600'];
+    const colors = ['bg-purple-600', 'bg-blue-600', 'bg-teal-600', 'bg-rose-600', 'bg-amber-600', 'bg-emerald-600'];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
     const userId = 'user_' + Date.now();
 
@@ -217,7 +214,8 @@ const Auth = {
       password: password,
       role: role.trim(),
       avatarBg: randomColor,
-      avatarLetter: name.trim().charAt(0).toUpperCase()
+      avatarLetter: name.trim().charAt(0).toUpperCase(),
+      avatarUrl: avatarUrl || ''
     };
 
     users.push(newUser);
@@ -248,7 +246,105 @@ const Auth = {
     // Automatically set as active user
     this.setActiveUser(newUser);
 
-    return { success: true, user: newUser };
+    return { success: true, user: newUser, message: `Pendaftaran berhasil! Akun ${newUser.name} siap digunakan.` };
+  },
+
+  /**
+   * Google OAuth Integration via Supabase
+   */
+  async loginWithGoogle() {
+    if (!window.supabaseClient) {
+      // Supabase not initialized yet -> open configuration modal
+      if (window.UI && typeof window.UI.openSupabaseConfigModal === 'function') {
+        window.UI.openSupabaseConfigModal();
+      }
+      return { success: false, needsConfig: true, message: 'Supabase Anon Key belum diisi.' };
+    }
+
+    try {
+      const redirectUri = window.location.origin + window.location.pathname;
+      const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUri
+        }
+      });
+      if (error) {
+        return { success: false, message: error.message };
+      }
+      return { success: true, data };
+    } catch (e) {
+      return { success: false, message: e.message };
+    }
+  },
+
+  /**
+   * Handle session returned from Supabase OAuth redirect
+   */
+  handleGoogleAuthSession(session) {
+    if (!session || !session.user) return;
+    const gUser = session.user;
+    const email = gUser.email;
+    if (!email) return;
+
+    const fullName = (gUser.user_metadata && (gUser.user_metadata.full_name || gUser.user_metadata.name)) || email.split('@')[0];
+    const avatarUrl = (gUser.user_metadata && gUser.user_metadata.avatar_url) || '';
+
+    let users = this.getAllUsers();
+    let existing = users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+
+    if (!existing) {
+      // Auto-register user from verified Google OAuth
+      const res = this.register({
+        name: fullName,
+        email: email,
+        password: 'google_oauth_verified_' + gUser.id,
+        role: 'Google User',
+        monthlyLimit: 500000,
+        avatarUrl: avatarUrl
+      });
+      if (res.success) {
+        existing = res.user;
+      }
+    }
+
+    if (existing) {
+      this.setActiveUser(existing);
+      if (window.UI) {
+        window.UI.showToast(`✨ Berhasil masuk via Google: ${fullName}`);
+        window.UI.render();
+      }
+      // Clean up OAuth tokens from URL hash
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
+  },
+
+  /**
+   * Quick simulated Google login for testing without waiting for cloud credentials
+   */
+  loginWithGoogleDemo() {
+    const demoGoogleEmail = 'google.user@gmail.com';
+    const demoName = 'Pengguna Google (Demo)';
+    let users = this.getAllUsers();
+    let existing = users.find(u => u.email && u.email.toLowerCase() === demoGoogleEmail);
+    if (!existing) {
+      const res = this.register({
+        name: demoName,
+        email: demoGoogleEmail,
+        password: 'demo_google_pass',
+        role: 'Akun Google Uji Lab',
+        monthlyLimit: 500000
+      });
+      existing = res.user;
+    }
+    this.setActiveUser(existing);
+    if (window.UI) {
+      window.UI.showToast(`✨ Berhasil masuk via Google (Simulasi Lab): ${demoName}`);
+      window.UI.render();
+    }
+    return { success: true, user: existing };
   },
 
   /**
@@ -265,7 +361,7 @@ const Auth = {
   },
 
   /**
-   * Logout user
+   * Logout user and return to login screen
    */
   logout() {
     this.setActiveUser(null);
