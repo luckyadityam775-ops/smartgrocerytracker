@@ -2453,20 +2453,8 @@ const UI = {
     const realtimeText = document.getElementById('realtime-badge-text');
 
     if (realtimeBadge) {
-      if (window.supabaseClient || (window.SupabaseDB && window.SupabaseDB.isReady)) {
-        realtimeBadge.className = 'flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-400 border border-sky-500/30 touch-scale transition-all';
-        if (realtimeText) realtimeText.textContent = 'LIVE CLOUD';
-      } else if (window.Realtime) {
-        const status = window.Realtime.getStatus();
-        if (status.isFirestoreActive) {
-          realtimeBadge.className = 'flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-400 border border-sky-500/30 touch-scale transition-all';
-          if (realtimeText) realtimeText.textContent = 'ONLINE';
-        } else {
-          realtimeBadge.className = 'flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 touch-scale transition-all';
-          if (realtimeText) realtimeText.textContent = 'LIVE';
-        }
-      }
-      realtimeBadge.onclick = () => this.openRealtimeModal();
+      realtimeBadge.style.display = 'none';
+      realtimeBadge.classList.add('hidden');
     }
 
     if (!profileContainer) return;

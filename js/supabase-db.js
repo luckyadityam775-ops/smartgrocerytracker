@@ -99,7 +99,8 @@ const SupabaseDB = {
             if (badge) badge.innerText = 'LIVE CLOUD';
             const badgeBtn = document.getElementById('btn-realtime-status');
             if (badgeBtn) {
-              badgeBtn.className = 'flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-400 border border-sky-500/30 touch-scale transition-all';
+              badgeBtn.style.display = 'none';
+              badgeBtn.classList.add('hidden');
             }
           } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             // Auto-reconnect after transient network sleep

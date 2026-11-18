@@ -99,6 +99,11 @@ main {
   border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
+/* Hide realtime badge (LIVE CLOUD) per user request */
+#btn-realtime-status {
+  display: none !important;
+}
+
 /* Animations */
 @keyframes shakeAlert {
   0%, 100% { transform: translateX(0); }
