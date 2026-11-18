@@ -20,7 +20,7 @@ window.SUPABASE_CONFIG = {
   callbackUrl: SUPABASE_CALLBACK_URL,
   anonKey: SUPABASE_ANON_KEY,
   getAnonKey() {
-    return localStorage.getItem('supabase_anon_key') || SUPABASE_ANON_KEY;
+    return SUPABASE_ANON_KEY;
   },
   setAnonKey(key) {
     const activeKey = (key && key.trim()) ? key.trim() : SUPABASE_ANON_KEY;
