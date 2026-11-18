@@ -153,8 +153,7 @@ const UI = {
    * Render Checkout Summary Card HTML
    */
   renderCheckoutSummaryHtml(summary) {
-    const { items, grandTotal, currentCartTotal, previousMonthlySpent, allSavings, totalItemsCount } = summary;
-    const cartDisplayTotal = (currentCartTotal !== undefined) ? currentCartTotal : grandTotal;
+    const { items, grandTotal, allSavings, totalItemsCount } = summary;
     return `
       <div class="${summary.isOverbudget ? 'bg-gradient-to-r from-rose-950/70 to-slate-900/90 border-rose-500/40' : 'bg-gradient-to-r from-emerald-950/60 to-slate-900/90 border-emerald-500/20'} rounded-2xl p-4 border mb-4 shadow-xl">
         <!-- Header Rincian Pembelian Belanja -->
@@ -194,15 +193,9 @@ const UI = {
             </div>
           ` : ''}
           <div class="flex items-center justify-between text-sm font-extrabold text-white pt-2 border-t border-slate-800">
-            <span>Total Pembayaran (Troli Ini):</span>
-            <span class="text-base ${summary.isOverbudget ? 'text-rose-400 font-black' : 'text-emerald-400'}">${Calculator.formatRupiah(cartDisplayTotal)}</span>
+            <span>Total Pembayaran:</span>
+            <span class="text-base ${summary.isOverbudget ? 'text-rose-400 font-black' : 'text-emerald-400'}">${Calculator.formatRupiah(grandTotal)}</span>
           </div>
-          ${(previousMonthlySpent && previousMonthlySpent > 0) ? `
-            <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-              <span>Total Pengeluaran Bulan Ini:</span>
-              <span class="font-bold text-slate-200">${Calculator.formatRupiah(grandTotal)}</span>
-            </div>
-          ` : ''}
         </div>
       </div>
     `;
@@ -266,15 +259,14 @@ const UI = {
 
     let itemsHtml = '';
     if (items.length === 0) {
-      const hasPriorSpent = summary.previousMonthlySpent && summary.previousMonthlySpent > 0;
       itemsHtml = `
         <div class="flex flex-col items-center justify-center py-10 px-4 text-center">
-          <div class="w-16 h-16 rounded-2xl ${hasPriorSpent ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-slate-800/60 border-slate-700/60 text-slate-500'} border flex items-center justify-center mb-3 shadow-inner">
-            <i data-lucide="${hasPriorSpent ? 'check-circle-2' : 'shopping-cart'}" class="w-8 h-8 ${hasPriorSpent ? 'text-emerald-400' : 'text-slate-400'}"></i>
+          <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-slate-500 mb-3 shadow-inner">
+            <i data-lucide="shopping-cart" class="w-8 h-8 text-emerald-400"></i>
           </div>
-          <h3 class="text-base font-extrabold text-white mb-1">${hasPriorSpent ? 'Troli Baru Siap Belanja' : 'Troli Masih Kosong'}</h3>
+          <h3 class="text-base font-extrabold text-white mb-1">Troli Masih Kosong</h3>
           <p class="text-xs text-slate-400 max-w-xs mb-5">
-            ${hasPriorSpent ? `Belanja bulan ini tersimpan: <strong class="text-white">${Calculator.formatRupiah(summary.previousMonthlySpent)}</strong>. Sisa saldo dompet yang aman digunakan: <strong class="text-emerald-400 font-bold">${Calculator.formatRupiah(summary.remainingBudget)}</strong>.` : 'Keranjang belanja masih kosong, silakan tambahkan barang belanja atau muat contoh 5 item belanjaan.'}
+            Keranjang belanja masih kosong, silakan tambahkan barang belanja atau muat contoh 5 item belanjaan.
           </p>
           <div class="flex flex-col gap-2.5 w-full max-w-xs mx-auto">
             <button id="btn-load-benchmark-cart" class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-950/40 touch-scale transition">
@@ -2170,8 +2162,7 @@ const UI = {
     const cart = Store.getActiveCart();
     const budget = Store.getBudgetSettings();
     const discount = Store.getCartDiscount();
-    const monthlyHistorySpent = Store.getMonthlyHistoricalSpent ? Store.getMonthlyHistoricalSpent() : 0;
-    const summary = Calculator.calculateCartSummary(cart, budget.monthlyLimit, discount, monthlyHistorySpent);
+    const summary = Calculator.calculateCartSummary(cart, budget.monthlyLimit, discount);
 
     if (summary.isOverbudget) {
       this.vibrate([100, 60, 100, 60, 150]);
@@ -3909,8 +3900,7 @@ CREATE POLICY "Akses Publik grocery_history" ON public.grocery_history FOR ALL U
     const budget = Store.getBudgetSettings();
     const cart = Store.getActiveCart();
     const discount = Store.getCartDiscount();
-    const monthlyHistorySpent = Store.getMonthlyHistoricalSpent ? Store.getMonthlyHistoricalSpent() : 0;
-    const summary = Calculator.calculateCartSummary(cart, budget.monthlyLimit, discount, monthlyHistorySpent);
+    const summary = Calculator.calculateCartSummary(cart, budget.monthlyLimit, discount);
 
     const currentTab = this.activeTab || 'belanja';
     const budgetHeader = document.getElementById('sticky-budget-header');

@@ -135,17 +135,21 @@ const Store = {
   // ------------------ BUDGET ------------------
   getBudgetSettings() {
     try {
-      const data = localStorage.getItem(this.getKey('budget'));
-      if (data) return JSON.parse(data);
       const user = window.Auth ? window.Auth.getCurrentUser() : null;
-      return { monthlyLimit: 500000, emergencyReserve: 50000, userName: user ? user.fullName : "Pengguna Utama" };
+      let data = localStorage.getItem(this.getKey('budget'));
+      if (!data) {
+        data = localStorage.getItem('smartgrocery_budget');
+      }
+      if (data) return JSON.parse(data);
+      return { monthlyLimit: 350000, emergencyReserve: 50000, userName: user ? user.fullName : "Rian (Anak Kost)" };
     } catch (e) {
-      return { monthlyLimit: 500000, emergencyReserve: 50000, userName: "Pengguna Utama" };
+      return { monthlyLimit: 350000, emergencyReserve: 50000, userName: "Rian (Anak Kost)" };
     }
   },
 
   saveBudgetSettings(settings) {
     localStorage.setItem(this.getKey('budget'), JSON.stringify(settings));
+    localStorage.setItem('smartgrocery_budget', JSON.stringify(settings));
     this.notifyChange('budget');
   },
 

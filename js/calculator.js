@@ -128,9 +128,8 @@ const Calculator = {
    * @param {number} budgetLimit Batas saldo dompet
    * @param {object} cartDiscount Voucher / diskon keranjang
    */
-  calculateCartSummary(items = [], budgetLimit = 500000, cartDiscount = { type: 'none', value: 0 }, previousMonthlySpent = 0) {
+  calculateCartSummary(items = [], budgetLimit = 500000, cartDiscount = { type: 'none', value: 0 }) {
     const parsedBudget = Math.max(0, this.parseNumber(budgetLimit));
-    const parsedPrevSpent = Math.max(0, this.parseNumber(previousMonthlySpent));
     let totalItemsCount = 0;
     let totalOriginal = 0;
     let totalItemsFinal = 0;
@@ -154,25 +153,22 @@ const Calculator = {
     }
     cartSavings = Math.min(totalItemsFinal, Math.max(0, cartSavings));
 
-    const currentCartTotal = Math.max(0, totalItemsFinal - cartSavings);
-    const grandTotal = currentCartTotal + parsedPrevSpent;
+    const grandTotal = Math.max(0, totalItemsFinal - cartSavings);
     const allSavings = totalItemSavings + cartSavings;
     const remainingBudget = parsedBudget - grandTotal;
     const budgetUsagePercent = parsedBudget > 0 ? (grandTotal / parsedBudget) * 100 : (grandTotal > 0 ? 100 : 0);
 
     // Safety Cap Status
-    // < 80%: Safe (Hijau)
-    // 80% - 100%: Warning / Waspada (Kuning)
-    // > 100% / Overbudget: Danger (Merah Tegas)
+    // Jika tidak ada barang di keranjang, status WAJIB Aman (0% Terpakai, sisa saldo utuh, tidak ada peringatan)
     let safetyStatus = "safe";
     let statusLabel = "Aman: Belanjaan Terkendali";
     let statusColor = "emerald";
 
-    if (remainingBudget < 0 || budgetUsagePercent > 100) {
+    if (items.length > 0 && (remainingBudget < 0 || budgetUsagePercent > 100)) {
       safetyStatus = "danger";
       statusLabel = "Total belanja melebihi batas saldo dompet! Kurangi kuantitas atau batalkan barang sekunder.";
       statusColor = "rose";
-    } else if (budgetUsagePercent >= 80) {
+    } else if (items.length > 0 && budgetUsagePercent >= 80) {
       safetyStatus = "warning";
       statusLabel = "Peringatan Waspada: Mendekati Batas Saldo Dompet!";
       statusColor = "amber";
@@ -182,18 +178,17 @@ const Calculator = {
       items: processedItems,
       totalItemsCount,
       totalOriginal,
-      currentCartTotal,
-      previousMonthlySpent: parsedPrevSpent,
+      currentCartTotal: grandTotal,
       grandTotal,
       allSavings,
       budgetLimit: parsedBudget,
-      remainingBudget,
-      budgetUsagePercent: Math.min(100, Math.round(budgetUsagePercent)),
-      actualPercent: budgetUsagePercent,
+      remainingBudget: items.length > 0 ? remainingBudget : parsedBudget,
+      budgetUsagePercent: items.length > 0 ? Math.min(100, Math.round(budgetUsagePercent)) : 0,
+      actualPercent: items.length > 0 ? budgetUsagePercent : 0,
       safetyStatus,
       statusLabel,
       statusColor,
-      isOverbudget: remainingBudget < 0
+      isOverbudget: items.length > 0 && remainingBudget < 0
     };
   }
 };
