@@ -175,18 +175,24 @@ const UI = {
     let itemsHtml = '';
     if (items.length === 0) {
       itemsHtml = `
-        <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
-          <div class="w-20 h-20 rounded-full bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-slate-500 mb-4 shadow-inner">
-            <i data-lucide="shopping-cart" class="w-10 h-10 text-emerald-500/60"></i>
+        <div class="flex flex-col items-center justify-center py-10 px-4 text-center">
+          <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-slate-500 mb-3 shadow-inner">
+            <i data-lucide="shopping-cart" class="w-8 h-8 text-emerald-400"></i>
           </div>
-          <h3 class="text-base font-bold text-white mb-1">Troli Masih Kosong</h3>
-          <p class="text-xs text-slate-400 max-w-xs mb-6">
-            Keranjang belanja masih kosong, silakan scan atau tambahkan kebutuhan pokok pertamamu.
+          <h3 class="text-base font-extrabold text-white mb-1">Troli Masih Kosong</h3>
+          <p class="text-xs text-slate-400 max-w-xs mb-5">
+            Keranjang belanja masih kosong, silakan tambahkan barang belanja atau muat contoh 5 item belanjaan.
           </p>
-          <button id="btn-empty-add-item" class="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-900/30 touch-scale touch-target-44">
-            <i data-lucide="plus-circle" class="w-5 h-5"></i>
-            <span>Tambah Barang Belanja</span>
-          </button>
+          <div class="flex flex-col gap-2.5 w-full max-w-xs mx-auto">
+            <button id="btn-load-benchmark-cart" class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-950/40 touch-scale transition">
+              <i data-lucide="package-check" class="w-4 h-4"></i>
+              <span>Muat 5 Contoh Barang Belanja</span>
+            </button>
+            <button id="btn-empty-add-item" class="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 touch-scale transition">
+              <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-400"></i>
+              <span>+ Tambah Barang Manual</span>
+            </button>
+          </div>
         </div>
       `;
     } else {
@@ -443,6 +449,19 @@ const UI = {
     if (emptyAddBtn) {
       emptyAddBtn.addEventListener('click', () => {
         this.openAddItemModal();
+      });
+    }
+
+    // Empty state Load Benchmark Cart
+    const loadBenchmarkBtn = document.getElementById('btn-load-benchmark-cart');
+    if (loadBenchmarkBtn) {
+      loadBenchmarkBtn.addEventListener('click', () => {
+        if (Store.loadStarterDemoItems) {
+          Store.loadStarterDemoItems();
+          this.vibrate(35);
+          this.showToast('5 Barang belanja contoh berhasil dimuat!');
+          this.render();
+        }
       });
     }
 

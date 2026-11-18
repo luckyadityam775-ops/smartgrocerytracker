@@ -8,19 +8,24 @@
 
 const SUPABASE_PROJECT_URL = 'https://pynraezkvnqtidmljdkk.supabase.co';
 const SUPABASE_CALLBACK_URL = 'https://pynraezkvnqtidmljdkk.supabase.co/auth/v1/callback';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5bnJhZXprdm5xdGlkbWxqZGtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5MTg2NDcsImV4cCI6MjExMDQ5NDY0N30.OVtpBCGy0l__1IAahicfRkSsyeCwUNjx8wQDb7JIVqY';
+
+// Always make sure anon key is cached in localStorage
+if (typeof localStorage !== 'undefined') {
+  localStorage.setItem('supabase_anon_key', SUPABASE_ANON_KEY);
+}
 
 window.SUPABASE_CONFIG = {
   url: SUPABASE_PROJECT_URL,
   callbackUrl: SUPABASE_CALLBACK_URL,
+  anonKey: SUPABASE_ANON_KEY,
   getAnonKey() {
-    return localStorage.getItem('supabase_anon_key') || window.__SUPABASE_ANON_KEY__ || '';
+    return localStorage.getItem('supabase_anon_key') || SUPABASE_ANON_KEY;
   },
   setAnonKey(key) {
-    if (key && key.trim()) {
-      localStorage.setItem('supabase_anon_key', key.trim());
-      return window.initSupabaseClient(key.trim());
-    }
-    return null;
+    const activeKey = (key && key.trim()) ? key.trim() : SUPABASE_ANON_KEY;
+    localStorage.setItem('supabase_anon_key', activeKey);
+    return window.initSupabaseClient(activeKey);
   }
 };
 
@@ -32,7 +37,7 @@ window.supabaseClient = null;
 window.initSupabaseClient = function(anonKey) {
   const key = anonKey || window.SUPABASE_CONFIG.getAnonKey();
   if (!key) {
-    console.info('[Supabase] Anon Key belum diisi. Google OAuth dapat dikonfigurasi melalui modal pengaturan.');
+    console.warn('[Supabase] Anon Key belum tersedia.');
     return null;
   }
 

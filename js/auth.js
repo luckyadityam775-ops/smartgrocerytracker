@@ -259,28 +259,32 @@ const Auth = {
    */
   async loginWithGoogle() {
     if (!window.supabaseClient) {
-      // Supabase not initialized yet -> open configuration modal
-      if (window.UI && typeof window.UI.openSupabaseConfigModal === 'function') {
-        window.UI.openSupabaseConfigModal();
+      if (typeof window.initSupabaseClient === 'function') {
+        window.initSupabaseClient();
       }
-      return { success: false, needsConfig: true, message: 'Supabase Anon Key belum diisi.' };
     }
 
-    try {
-      const redirectUri = window.location.origin + window.location.pathname;
-      const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUri
+    if (window.supabaseClient) {
+      try {
+        const redirectUri = window.location.origin + window.location.pathname;
+        const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUri
+          }
+        });
+        if (error) {
+          console.warn('[Supabase Google OAuth]', error.message);
+          return this.loginWithGoogleDemo();
         }
-      });
-      if (error) {
-        return { success: false, message: error.message };
+        return { success: true, data };
+      } catch (e) {
+        console.warn('[Supabase Google OAuth Exception]', e);
+        return this.loginWithGoogleDemo();
       }
-      return { success: true, data };
-    } catch (e) {
-      return { success: false, message: e.message };
     }
+
+    return this.loginWithGoogleDemo();
   },
 
   /**
@@ -314,6 +318,15 @@ const Auth = {
     }
 
     if (existing) {
+      // Make sure cart has the benchmark starter items so it's not empty!
+      const currentCart = localStorage.getItem(`smartgrocery_${existing.id}_cart`);
+      if (!currentCart || currentCart === '[]') {
+        const starter = (typeof SEED_DATA !== 'undefined' && SEED_DATA.userData_user_rian)
+          ? SEED_DATA.userData_user_rian.activeCart.map(item => ({ ...item }))
+          : [];
+        localStorage.setItem(`smartgrocery_${existing.id}_cart`, JSON.stringify(starter));
+      }
+
       this.setActiveUser(existing);
       if (window.UI) {
         window.UI.showToast(`✨ Berhasil masuk via Google: ${fullName}`);

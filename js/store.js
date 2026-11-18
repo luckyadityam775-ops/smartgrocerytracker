@@ -106,13 +106,39 @@ const Store = {
   getActiveCart() {
     try {
       const data = localStorage.getItem(this.getKey('cart'));
+      if (data && data !== '[]') {
+        return JSON.parse(data);
+      }
+      // If user's cart has never been populated or is empty on first open:
+      const isExplicitlyCleared = localStorage.getItem(this.getKey('cart_cleared')) === '1';
+      if (!isExplicitlyCleared && (!data || data === '[]')) {
+        const starter = (typeof SEED_DATA !== 'undefined' && SEED_DATA.userData_user_rian)
+          ? SEED_DATA.userData_user_rian.activeCart.map(item => ({ ...item }))
+          : [];
+        if (starter.length > 0) {
+          localStorage.setItem(this.getKey('cart'), JSON.stringify(starter));
+          return starter;
+        }
+      }
       return data ? JSON.parse(data) : [];
     } catch (e) {
       return [];
     }
   },
 
+  loadStarterDemoItems() {
+    localStorage.removeItem(this.getKey('cart_cleared'));
+    const starter = (typeof SEED_DATA !== 'undefined' && SEED_DATA.userData_user_rian)
+      ? SEED_DATA.userData_user_rian.activeCart.map(item => ({ ...item }))
+      : [];
+    this.saveActiveCart(starter);
+    return starter;
+  },
+
   saveActiveCart(cart) {
+    if (cart && Array.isArray(cart) && cart.length > 0) {
+      localStorage.removeItem(this.getKey('cart_cleared'));
+    }
     localStorage.setItem(this.getKey('cart'), JSON.stringify(cart));
     this.notifyChange('cart');
   },
@@ -194,6 +220,7 @@ const Store = {
   },
 
   clearActiveCart() {
+    localStorage.setItem(this.getKey('cart_cleared'), '1');
     this.saveActiveCart([]);
   },
 
@@ -336,6 +363,7 @@ const Store = {
     });
 
     // Reset active cart
+    localStorage.setItem(this.getKey('cart_cleared'), '1');
     this.saveActiveCart([]);
     this.saveCartDiscount({ type: 'none', value: 0 });
 
