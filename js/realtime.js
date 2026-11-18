@@ -167,7 +167,8 @@
       const currentUser = window.Auth ? window.Auth.getCurrentUser() : null;
       const currentUid = currentUser ? currentUser.id : 'user_rian';
       if (snapshot.userId && snapshot.userId !== currentUid) {
-        return; // Ignore updates meant for another logged-in profile
+        const isSameGoogle = snapshot.userId.startsWith('user_google_') && currentUid.startsWith('user_google_');
+        if (!isSameGoogle) return; // Ignore updates meant for another logged-in profile
       }
 
       // Apply snapshot to local memory store

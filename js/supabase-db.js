@@ -34,18 +34,23 @@ const SupabaseDB = {
   },
 
   /**
-   * Subscribe to Supabase Postgres Realtime changes
+   * Subscribe to Supabase Postgres Realtime changes & Instant Broadcast Channel
    */
   subscribeRealtime() {
     if (!window.supabaseClient) return;
 
     try {
       if (this.realtimeChannel) {
-        window.supabaseClient.removeChannel(this.realtimeChannel);
+        try { window.supabaseClient.removeChannel(this.realtimeChannel); } catch (e) {}
       }
 
       this.realtimeChannel = window.supabaseClient
-        .channel('smartgrocery_postgres_sync')
+        .channel('smartgrocery_postgres_sync', {
+          config: { broadcast: { self: false } }
+        })
+        .on('broadcast', { event: 'grocery_sync' }, ({ payload }) => {
+          this.handleBroadcastRemoteChange(payload);
+        })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'grocery_cart' }, (payload) => {
           this.handleCartRemoteChange(payload);
         })
@@ -54,9 +59,48 @@ const SupabaseDB = {
         })
         .subscribe((status) => {
           console.log('[SupabaseDB Realtime Status]', status);
+          if (status === 'SUBSCRIBED') {
+            const badge = document.getElementById('realtime-badge-text');
+            if (badge) badge.innerText = 'LIVE CLOUD';
+          }
         });
     } catch (e) {
       console.warn('[SupabaseDB] Error saat setup realtime subscription:', e);
+    }
+  },
+
+  /**
+   * Handle incoming instant WebSocket broadcast from another device
+   */
+  handleBroadcastRemoteChange(payload) {
+    if (!payload || !payload.snapshot) return;
+    if (this.isApplyingRemote) return;
+
+    const myClientId = window.Realtime ? window.Realtime.clientId : null;
+    if (payload.originClientId && payload.originClientId === myClientId) return;
+
+    const snapshot = payload.snapshot;
+    const user = window.Auth ? window.Auth.getCurrentUser() : null;
+    const currentUserId = user ? user.id : 'user_rian';
+
+    const incomingUserId = payload.userId || snapshot.userId;
+    if (incomingUserId && incomingUserId !== currentUserId) {
+      const isSameGoogleUser = incomingUserId.startsWith('user_google_') && currentUserId.startsWith('user_google_');
+      if (!isSameGoogleUser) return;
+    }
+
+    console.log('[Supabase Realtime Broadcast] Menerima update seketika dari perangkat lain:', snapshot.type);
+
+    this.isApplyingRemote = true;
+    try {
+      if (window.Store) {
+        window.Store.applySnapshot(snapshot);
+      }
+      if (window.UI) {
+        window.UI.showToast('✨ Sinkronisasi Realtime: Troli diperbarui dari perangkat lain');
+      }
+    } finally {
+      this.isApplyingRemote = false;
     }
   },
 
@@ -69,9 +113,13 @@ const SupabaseDB = {
     const currentUserId = user ? user.id : 'user_rian';
 
     const item = payload.new || payload.old;
-    if (!item || (item.user_id && item.user_id !== currentUserId)) return;
+    if (!item) return;
+    if (item.user_id && item.user_id !== currentUserId) {
+      const isSameGoogleUser = item.user_id.startsWith('user_google_') && currentUserId.startsWith('user_google_');
+      if (!isSameGoogleUser) return;
+    }
 
-    console.log('[SupabaseDB] Menerima pembaruan troli dari Supabase:', payload.eventType);
+    console.log('[SupabaseDB] Menerima pembaruan troli postgres:', payload.eventType);
     
     // Pull fresh cart from Supabase and apply locally
     this.pullUserData(currentUserId);
@@ -86,9 +134,13 @@ const SupabaseDB = {
     const currentUserId = user ? user.id : 'user_rian';
 
     const budget = payload.new;
-    if (!budget || budget.user_id !== currentUserId) return;
+    if (!budget) return;
+    if (budget.user_id && budget.user_id !== currentUserId) {
+      const isSameGoogleUser = budget.user_id.startsWith('user_google_') && currentUserId.startsWith('user_google_');
+      if (!isSameGoogleUser) return;
+    }
 
-    console.log('[SupabaseDB] Menerima pembaruan saldo dompet dari Supabase');
+    console.log('[SupabaseDB] Menerima pembaruan saldo dompet postgres');
     if (window.Store) {
       this.isApplyingRemote = true;
       try {
@@ -115,11 +167,27 @@ const SupabaseDB = {
 
     try {
       // 1. Fetch Cart Items
-      const { data: cartData, error: cartErr } = await window.supabaseClient
+      let { data: cartData, error: cartErr } = await window.supabaseClient
         .from('grocery_cart')
         .select('*')
         .eq('user_id', uid)
         .order('created_at', { ascending: false });
+
+      // Auto-migrate legacy rows if this is a newly assigned stable Google ID
+      if ((!cartData || cartData.length === 0) && uid.startsWith('user_google_')) {
+        const { data: legacyRows } = await window.supabaseClient
+          .from('grocery_cart')
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .limit(20);
+        if (legacyRows && legacyRows.length > 0) {
+          cartData = legacyRows;
+          await window.supabaseClient
+            .from('grocery_cart')
+            .update({ user_id: uid })
+            .in('id', legacyRows.map(r => r.id));
+        }
+      }
 
       if (!cartErr && Array.isArray(cartData) && cartData.length > 0) {
         const localCart = cartData.map(row => ({
@@ -151,11 +219,31 @@ const SupabaseDB = {
       }
 
       // 2. Fetch Budget
-      const { data: budgetData, error: budgetErr } = await window.supabaseClient
+      let { data: budgetData, error: budgetErr } = await window.supabaseClient
         .from('grocery_budget')
         .select('*')
         .eq('user_id', uid)
         .maybeSingle();
+
+      if (!budgetData && uid.startsWith('user_google_')) {
+        const { data: legacyBudgets } = await window.supabaseClient
+          .from('grocery_budget')
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .limit(1);
+        if (legacyBudgets && legacyBudgets.length > 0) {
+          budgetData = legacyBudgets[0];
+          await window.supabaseClient
+            .from('grocery_budget')
+            .upsert({
+              user_id: uid,
+              monthly_limit: budgetData.monthly_limit,
+              emergency_reserve: budgetData.emergency_reserve,
+              user_name: budgetData.user_name,
+              updated_at: new Date().toISOString()
+            });
+        }
+      }
 
       if (!budgetErr && budgetData) {
         this.isApplyingRemote = true;
@@ -180,7 +268,7 @@ const SupabaseDB = {
   },
 
   /**
-   * Sync a mutation snapshot to Supabase tables
+   * Sync a mutation snapshot to Supabase tables and send instant WebSocket broadcast
    */
   async syncSnapshot(snapshot) {
     if (!window.supabaseClient || this.isApplyingRemote) return;
@@ -189,6 +277,24 @@ const SupabaseDB = {
     const user = window.Auth ? window.Auth.getCurrentUser() : null;
     const userId = user ? user.id : (snapshot.userId || 'user_rian');
 
+    // 1. Broadcast instant WebSocket message to all other devices on the channel
+    if (this.realtimeChannel) {
+      try {
+        this.realtimeChannel.send({
+          type: 'broadcast',
+          event: 'grocery_sync',
+          payload: {
+            snapshot,
+            userId,
+            originClientId: window.Realtime ? window.Realtime.clientId : null
+          }
+        });
+      } catch (err) {
+        console.warn('[SupabaseDB] Broadcast send error:', err);
+      }
+    }
+
+    // 2. Persist to PostgreSQL tables
     try {
       if (snapshot.type === 'cart' && Array.isArray(snapshot.data)) {
         await this.syncCartToSupabase(snapshot.data, userId);

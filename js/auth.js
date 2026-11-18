@@ -103,8 +103,29 @@ const Auth = {
 
   getCurrentUser() {
     try {
-      const data = (typeof sessionStorage !== 'undefined') ? sessionStorage.getItem(this.KEYS.ACTIVE_USER) : null;
-      return data ? JSON.parse(data) : null;
+      let data = (typeof sessionStorage !== 'undefined') ? sessionStorage.getItem(this.KEYS.ACTIVE_USER) : null;
+      if (!data && typeof localStorage !== 'undefined') {
+        data = localStorage.getItem(this.KEYS.ACTIVE_USER);
+      }
+      if (!data) return null;
+      let user = JSON.parse(data);
+
+      // Auto-migrate Google users to unified deterministic ID across all devices
+      if (user && user.email && (user.role === 'Google User' || user.email.includes('@'))) {
+        const stableId = 'user_google_' + user.email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+        if (user.id !== stableId && !user.id.startsWith('user_rian') && !user.id.startsWith('user_aditya')) {
+          const oldId = user.id;
+          ['cart', 'budget', 'catalog', 'history', 'cart_discount'].forEach(k => {
+            const oldVal = localStorage.getItem(`smartgrocery_${oldId}_${k}`);
+            if (oldVal && !localStorage.getItem(`smartgrocery_${stableId}_${k}`)) {
+              localStorage.setItem(`smartgrocery_${stableId}_${k}`, oldVal);
+            }
+          });
+          user.id = stableId;
+          this.setActiveUser(user);
+        }
+      }
+      return user;
     } catch (e) {
       return null;
     }
@@ -128,16 +149,17 @@ const Auth = {
       if (typeof sessionStorage !== 'undefined') {
         sessionStorage.setItem(this.KEYS.ACTIVE_USER, JSON.stringify(safeUser));
       }
-      try {
-        localStorage.removeItem(this.KEYS.ACTIVE_USER);
-      } catch (e) {}
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(this.KEYS.ACTIVE_USER, JSON.stringify(safeUser));
+      }
     } else {
       if (typeof sessionStorage !== 'undefined') {
         sessionStorage.removeItem(this.KEYS.ACTIVE_USER);
+        sessionStorage.setItem('smartgrocery_logged_out', '1');
       }
-      try {
+      if (typeof localStorage !== 'undefined') {
         localStorage.removeItem(this.KEYS.ACTIVE_USER);
-      } catch (e) {}
+      }
     }
     this.notifyAuthChange(user);
   },
@@ -224,7 +246,7 @@ const Auth = {
   /**
    * Register a new user with dedicated isolated storage
    */
-  register({ name, email, password, role = 'Anak Kost', monthlyLimit = 500000, emergencyReserve = 50000, avatarUrl = '' }) {
+  register({ id = null, name, email, password, role = 'Anak Kost', monthlyLimit = 500000, emergencyReserve = 50000, avatarUrl = '' }) {
     if (!name || !name.trim()) {
       return { success: false, message: 'Nama lengkap wajib diisi!' };
     }
@@ -244,7 +266,7 @@ const Auth = {
 
     const colors = ['bg-purple-600', 'bg-blue-600', 'bg-teal-600', 'bg-rose-600', 'bg-amber-600', 'bg-emerald-600'];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
-    const userId = 'user_' + Date.now();
+    const userId = id || ('user_' + Date.now());
 
     const newUser = {
       id: userId,
@@ -334,12 +356,28 @@ const Auth = {
     const fullName = (gUser.user_metadata && (gUser.user_metadata.full_name || gUser.user_metadata.name)) || email.split('@')[0];
     const avatarUrl = (gUser.user_metadata && gUser.user_metadata.avatar_url) || '';
 
-    let users = this.getAllUsers();
-    let existing = users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+    // Create a stable, deterministic user ID from Google account so it is IDENTICAL across all devices!
+    const stableUserId = 'user_google_' + email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
 
-    if (!existing) {
-      // Auto-register user from verified Google OAuth
+    let users = this.getAllUsers();
+    let existing = users.find(u => (u.email && u.email.toLowerCase() === email.toLowerCase()) || u.id === stableUserId);
+
+    if (existing) {
+      if (existing.id !== stableUserId) {
+        const oldId = existing.id;
+        ['cart', 'budget', 'catalog', 'history', 'cart_discount'].forEach(k => {
+          const oldVal = localStorage.getItem(`smartgrocery_${oldId}_${k}`);
+          if (oldVal && !localStorage.getItem(`smartgrocery_${stableUserId}_${k}`)) {
+            localStorage.setItem(`smartgrocery_${stableUserId}_${k}`, oldVal);
+          }
+        });
+        existing.id = stableUserId;
+        this.saveUsers(users);
+      }
+    } else {
+      // Auto-register user from verified Google OAuth with deterministic stable ID
       const res = this.register({
+        id: stableUserId,
         name: fullName,
         email: email,
         password: 'google_oauth_verified_' + gUser.id,
@@ -353,20 +391,29 @@ const Auth = {
     }
 
     if (existing) {
-      // Make sure cart has the benchmark starter items so it's not empty!
-      const currentCart = localStorage.getItem(`smartgrocery_${existing.id}_cart`);
-      if (!currentCart || currentCart === '[]') {
-        const starter = (typeof SEED_DATA !== 'undefined' && SEED_DATA.userData_user_rian)
-          ? SEED_DATA.userData_user_rian.activeCart.map(item => ({ ...item }))
-          : [];
-        localStorage.setItem(`smartgrocery_${existing.id}_cart`, JSON.stringify(starter));
+      this.setActiveUser(existing);
+
+      // Connect and sync with Supabase Cloud Realtime Database immediately
+      if (window.SupabaseDB) {
+        window.SupabaseDB.init();
+        window.SupabaseDB.pullUserData(existing.id).then(() => {
+          const currentCart = window.Store ? window.Store.getActiveCart() : [];
+          if (!currentCart || currentCart.length === 0) {
+            const starter = (typeof SEED_DATA !== 'undefined' && SEED_DATA.userData_user_rian)
+              ? SEED_DATA.userData_user_rian.activeCart.map(item => ({ ...item }))
+              : [];
+            if (starter.length > 0 && window.Store) {
+              window.Store.saveActiveCart(starter);
+            }
+          }
+        });
       }
 
-      this.setActiveUser(existing);
       if (window.UI) {
         window.UI.showToast(`✨ Berhasil masuk via Google: ${fullName}`);
         window.UI.render();
       }
+
       // Clean up OAuth tokens from URL hash
       if (window.history && window.history.replaceState) {
         window.history.replaceState(null, '', window.location.pathname);
