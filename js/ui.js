@@ -2200,8 +2200,8 @@ const UI = {
 
             <div class="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
               <button id="btn-account-supabase-config" class="flex-1 py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold flex items-center justify-center gap-1.5 touch-scale transition border border-slate-700">
-                <i data-lucide="key" class="w-3.5 h-3.5 text-emerald-400"></i>
-                <span>OAuth Supabase</span>
+                <i data-lucide="database" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>Database Supabase</span>
               </button>
               <button id="btn-account-logout" class="flex-1 py-2 px-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 text-[11px] font-bold flex items-center justify-center gap-1.5 touch-scale transition border border-rose-500/30">
                 <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
@@ -2770,7 +2770,7 @@ const UI = {
   },
 
   /**
-   * Modal to configure Supabase API Key for Google OAuth
+   * Modal to configure Supabase API Key for Database & Google OAuth
    */
   openSupabaseConfigModal() {
     const modalContainer = document.getElementById('modal-container');
@@ -2784,11 +2784,11 @@ const UI = {
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-              <i data-lucide="key" class="w-4 h-4"></i>
+              <i data-lucide="database" class="w-4 h-4"></i>
             </div>
             <div>
-              <h3 class="text-sm font-extrabold text-white">Google OAuth Supabase</h3>
-              <p class="text-[10px] text-slate-400">Pengaturan Kunci API Supabase</p>
+              <h3 class="text-sm font-extrabold text-white">Database & OAuth Supabase</h3>
+              <p class="text-[10px] text-slate-400">Konfigurasi Cloud Supabase</p>
             </div>
           </div>
           <button id="btn-close-supabase-modal" class="p-1 rounded-lg text-slate-400 hover:text-white">
@@ -2797,6 +2797,7 @@ const UI = {
         </div>
 
         <div class="space-y-2.5 text-xs">
+          <!-- Project Info Box -->
           <div class="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1.5">
             <div class="flex justify-between items-center text-[10px]">
               <span class="text-slate-400">Project URL:</span>
@@ -2813,29 +2814,46 @@ const UI = {
             <p class="text-[9px] text-slate-400 truncate font-mono">https://pynraezkvnqtidmljdkk.supabase.co/auth/v1/callback</p>
           </div>
 
+          <!-- Anon Key Input -->
           <div>
             <label class="block text-[11px] font-semibold text-slate-300 mb-1">Supabase Anon Key (Public API Key):</label>
-            <textarea id="input-supabase-anon-key" rows="3" placeholder="Tempelkan Supabase anon public key Anda di sini (eyJhbGciOi...)" 
+            <textarea id="input-supabase-anon-key" rows="2" placeholder="Tempelkan Supabase anon public key Anda di sini (eyJhbGciOi...)" 
               class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-emerald-500">${currentKey}</textarea>
             <p class="text-[10px] text-slate-400 mt-1">
               *Dapatkan dari: Supabase Dashboard &rarr; Project Settings &rarr; API &rarr; Project API keys &rarr; anon public.
             </p>
           </div>
+
+          <!-- SQL Schema Copy Button -->
+          <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-bold text-slate-300 block">Tabel Database Belanja</span>
+              <span class="text-[9px] text-slate-400 block">grocery_cart, grocery_budget, grocery_history</span>
+            </div>
+            <button id="btn-copy-sql-schema" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1">
+              <i data-lucide="code" class="w-3 h-3"></i>
+              <span>Salin SQL</span>
+            </button>
+          </div>
+
+          <!-- Test Connection Status Box -->
+          <div id="supabase-test-status" class="hidden p-2.5 rounded-xl text-[11px] leading-relaxed"></div>
         </div>
 
         <div class="space-y-2 pt-2 border-t border-slate-800">
-          <button id="btn-save-supabase-config" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md touch-scale transition flex items-center justify-center gap-1.5">
-            <i data-lucide="check" class="w-4 h-4"></i>
-            <span>Simpan & Hubungkan Google</span>
-          </button>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btn-test-supabase-db" class="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-[11px] border border-slate-700 touch-scale transition flex items-center justify-center gap-1">
+              <i data-lucide="activity" class="w-3.5 h-3.5 text-sky-400"></i>
+              <span>Uji Koneksi</span>
+            </button>
+            <button id="btn-save-supabase-config" class="py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] shadow-md touch-scale transition flex items-center justify-center gap-1">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+              <span>Simpan & Pakai</span>
+            </button>
+          </div>
           
-          <button id="btn-demo-google-login" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 touch-scale transition flex items-center justify-center gap-2">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-            </svg>
+          <button id="btn-demo-google-login" class="w-full py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-bold text-[10px] border border-slate-700 touch-scale transition flex items-center justify-center gap-1.5">
+            <i data-lucide="sparkles" class="w-3 h-3 text-amber-400"></i>
             <span>Uji Coba Masuk Google (Mode Simulasi Demo)</span>
           </button>
         </div>
@@ -2854,16 +2872,92 @@ const UI = {
       this.showToast('Callback URL disalin ke clipboard!');
     });
 
+    document.getElementById('btn-copy-sql-schema')?.addEventListener('click', () => {
+      const sqlCode = `-- SKEMA DATABASE SMART GROCERY TRACKER (SUPABASE POSTGRESQL)
+CREATE TABLE IF NOT EXISTS public.grocery_cart (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL DEFAULT 'user_rian',
+    name TEXT NOT NULL,
+    category TEXT DEFAULT 'Bahan Pokok',
+    unit TEXT DEFAULT 'pcs',
+    qty NUMERIC NOT NULL DEFAULT 1,
+    current_price NUMERIC NOT NULL DEFAULT 0,
+    last_price NUMERIC DEFAULT 0,
+    discount_type TEXT DEFAULT 'none',
+    discount_a NUMERIC DEFAULT 0,
+    discount_b NUMERIC DEFAULT 0,
+    discount_nominal NUMERIC DEFAULT 0,
+    is_checked BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.grocery_budget (
+    user_id TEXT PRIMARY KEY,
+    monthly_limit NUMERIC NOT NULL DEFAULT 500000,
+    emergency_reserve NUMERIC NOT NULL DEFAULT 50000,
+    user_name TEXT DEFAULT 'Pengguna Utama',
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.grocery_history (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL DEFAULT 'user_rian',
+    store_name TEXT DEFAULT 'Supermarket',
+    transaction_date TEXT,
+    total_spent NUMERIC NOT NULL DEFAULT 0,
+    total_saved NUMERIC DEFAULT 0,
+    items JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.grocery_cart ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.grocery_budget ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.grocery_history ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Akses Publik grocery_cart" ON public.grocery_cart FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Akses Publik grocery_budget" ON public.grocery_budget FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Akses Publik grocery_history" ON public.grocery_history FOR ALL USING (true) WITH CHECK (true);`;
+      
+      navigator.clipboard.writeText(sqlCode);
+      this.showToast('✅ Script SQL berhasil disalin! Tempel di SQL Editor Supabase.');
+    });
+
+    // Uji Koneksi Database Supabase
+    document.getElementById('btn-test-supabase-db')?.addEventListener('click', async () => {
+      const val = document.getElementById('input-supabase-anon-key')?.value;
+      const statusBox = document.getElementById('supabase-test-status');
+      if (val && val.trim()) {
+        window.SUPABASE_CONFIG.setAnonKey(val.trim());
+      }
+
+      if (statusBox) {
+        statusBox.className = 'p-2.5 rounded-xl bg-slate-800 text-slate-300 text-[11px] flex items-center gap-2 block';
+        statusBox.innerHTML = '<span class="w-3 h-3 rounded-full border-2 border-sky-400 border-t-transparent animate-spin shrink-0"></span><span>Menguji koneksi ke Supabase...</span>';
+      }
+
+      if (window.SupabaseDB) {
+        const res = await window.SupabaseDB.testConnection();
+        if (statusBox) {
+          if (res.success) {
+            statusBox.className = 'p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] block';
+            statusBox.innerHTML = `<strong>✅ Terhubung!</strong> ${res.message}`;
+          } else {
+            statusBox.className = 'p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[11px] block';
+            statusBox.innerHTML = `<strong>⚠️ ${res.code || 'Gagal'}:</strong> ${res.message}`;
+          }
+        }
+      }
+    });
+
     document.getElementById('btn-save-supabase-config')?.addEventListener('click', () => {
       const val = document.getElementById('input-supabase-anon-key')?.value;
       if (val && val.trim()) {
         window.SUPABASE_CONFIG.setAnonKey(val.trim());
+        if (window.SupabaseDB) window.SupabaseDB.init();
         modalContainer.className = 'hidden';
         modalContainer.innerHTML = '';
-        this.showToast('Supabase Anon Key berhasil disimpan! Menghubungkan Google...');
-        setTimeout(() => {
-          window.Auth.loginWithGoogle();
-        }, 300);
+        this.showToast('✅ Supabase Anon Key berhasil disimpan dan aktif!');
       } else {
         this.showToast('Silakan tempelkan Anon Key terlebih dahulu.', 'error');
       }

@@ -136,7 +136,12 @@
         this.syncToFirestore(snapshot);
       }
 
-      // 4. Sync to local LAN server endpoint (/api/sync)
+      // 4. Sync to Supabase Cloud Database if connected
+      if (window.SupabaseDB && typeof window.SupabaseDB.syncSnapshot === 'function') {
+        window.SupabaseDB.syncSnapshot(snapshot);
+      }
+
+      // 5. Sync to local LAN server endpoint (/api/sync)
       if (typeof fetch === 'function' && typeof window !== 'undefined' && window.location && window.location.protocol && window.location.protocol.startsWith('http')) {
         try {
           fetch('./api/sync', {
