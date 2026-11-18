@@ -65,6 +65,57 @@ const Store = {
   },
 
   // ------------------ SESSION (STORE & DATE) [F-01, F-06A] ------------------
+  getStoreLocations() {
+    const defaults = [
+      "Lotte Mart Grocery - Puri Indah",
+      "Superindo - Puri Indah",
+      "Hypermart - Puri Indah",
+      "Grand Lucky Superstore"
+    ];
+    try {
+      const custom = localStorage.getItem('smartgrocery_custom_stores');
+      if (custom) {
+        const parsed = JSON.parse(custom);
+        if (Array.isArray(parsed)) {
+          const merged = [...defaults];
+          parsed.forEach(p => {
+            if (p && typeof p === 'string' && !merged.includes(p.trim())) {
+              merged.push(p.trim());
+            }
+          });
+          return merged;
+        }
+      }
+    } catch (e) {}
+    return defaults;
+  },
+
+  addStoreLocation(newStoreName) {
+    if (!newStoreName || !newStoreName.trim()) return false;
+    const clean = newStoreName.trim();
+    const defaults = [
+      "Lotte Mart Grocery - Puri Indah",
+      "Superindo - Puri Indah",
+      "Hypermart - Puri Indah",
+      "Grand Lucky Superstore"
+    ];
+    try {
+      let custom = [];
+      const saved = localStorage.getItem('smartgrocery_custom_stores');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) custom = parsed;
+      }
+      if (!defaults.includes(clean) && !custom.includes(clean)) {
+        custom.push(clean);
+        localStorage.setItem('smartgrocery_custom_stores', JSON.stringify(custom));
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
   getSessionInfo() {
     try {
       const data = localStorage.getItem(this.getKey('session'));

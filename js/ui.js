@@ -177,6 +177,15 @@ const UI = {
 
     const { items, grandTotal, allSavings, totalItemsCount } = summary;
     const sessionInfo = Store.getSessionInfo ? Store.getSessionInfo() : { storeName: "Lotte Mart Grocery - Puri Indah", date: "2026-10-26" };
+    const storeLocations = Store.getStoreLocations ? Store.getStoreLocations() : [
+      "Lotte Mart Grocery - Puri Indah",
+      "Superindo - Puri Indah",
+      "Hypermart - Puri Indah",
+      "Grand Lucky Superstore"
+    ];
+    if (sessionInfo.storeName && !storeLocations.includes(sessionInfo.storeName)) {
+      storeLocations.push(sessionInfo.storeName);
+    }
 
     let itemsHtml = '';
     if (items.length === 0) {
@@ -297,15 +306,21 @@ const UI = {
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
             <div>
-              <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1">
-                <i data-lucide="map-pin" class="w-3 h-3 text-emerald-400"></i>
-                <span>Lokasi Toko Supermarket</span>
-              </label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                  <i data-lucide="map-pin" class="w-3 h-3 text-emerald-400"></i>
+                  <span>Lokasi Toko Supermarket</span>
+                </label>
+                <button type="button" id="btn-add-custom-store" class="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-0.5 rounded-lg border border-emerald-500/30 flex items-center gap-1 transition touch-scale" title="Tambah lokasi toko manual">
+                  <i data-lucide="plus" class="w-3 h-3"></i>
+                  <span>Tambah Toko</span>
+                </button>
+              </div>
               <select id="session-store-select" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-white focus:outline-none focus:border-emerald-500">
-                <option value="Lotte Mart Grocery - Puri Indah" ${sessionInfo.storeName === 'Lotte Mart Grocery - Puri Indah' ? 'selected' : ''}>Lotte Mart Grocery - Puri Indah</option>
-                <option value="Superindo - Puri Indah" ${sessionInfo.storeName === 'Superindo - Puri Indah' ? 'selected' : ''}>Superindo - Puri Indah</option>
-                <option value="Hypermart - Puri Indah" ${sessionInfo.storeName === 'Hypermart - Puri Indah' ? 'selected' : ''}>Hypermart - Puri Indah</option>
-                <option value="Grand Lucky Superstore" ${sessionInfo.storeName === 'Grand Lucky Superstore' ? 'selected' : ''}>Grand Lucky Superstore</option>
+                ${storeLocations.map(store => `
+                  <option value="${store}" ${sessionInfo.storeName === store ? 'selected' : ''}>${store}</option>
+                `).join('')}
+                <option value="__add_new_store__" class="text-emerald-400 font-bold">➕ + Tambah Lokasi Manual...</option>
               </select>
             </div>
 
@@ -414,8 +429,22 @@ const UI = {
     // Session Store & Date Change Listeners [SRS F-01 & F-06A]
     const storeSelect = document.getElementById('session-store-select');
     const datePicker = document.getElementById('session-date-picker');
+    const btnAddStore = document.getElementById('btn-add-custom-store');
+
+    if (btnAddStore) {
+      btnAddStore.addEventListener('click', () => {
+        this.openAddCustomStoreModal();
+      });
+    }
+
     if (storeSelect && datePicker) {
       const handleSessionChange = () => {
+        if (storeSelect.value === '__add_new_store__') {
+          const prevStore = Store.getSessionInfo().storeName || 'Lotte Mart Grocery - Puri Indah';
+          storeSelect.value = prevStore;
+          this.openAddCustomStoreModal();
+          return;
+        }
         Store.saveSessionInfo({
           storeName: storeSelect.value,
           date: datePicker.value
@@ -1149,6 +1178,108 @@ const UI = {
     document.getElementById('modal-confirm-yes').addEventListener('click', () => {
       closeModal();
       if (typeof onConfirm === 'function') onConfirm();
+    });
+  },
+
+  /**
+   * Modal: Tambah Lokasi Supermarket / Toko Manual
+   */
+  openAddCustomStoreModal() {
+    const modal = document.getElementById('modal-container');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.innerHTML = `
+      <div class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div class="w-full max-w-sm bg-slate-900 border border-slate-700/80 rounded-3xl p-5 shadow-2xl animate-scale-up space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                <i data-lucide="store" class="w-4 h-4"></i>
+              </span>
+              <div>
+                <h3 class="text-sm font-bold text-white">Tambah Lokasi Toko</h3>
+                <p class="text-[11px] text-slate-400">Tambahkan supermarket / toko langganan</p>
+              </div>
+            </div>
+            <button id="modal-store-close" class="p-1.5 rounded-full text-slate-400 hover:text-white bg-slate-800 touch-scale" aria-label="Tutup">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <form id="form-add-custom-store" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Nama Toko / Supermarket *</label>
+              <input type="text" id="input-custom-store-name" placeholder="Contoh: Ranch Market, Alfamidi, Farmers Market..." 
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 placeholder-slate-500">
+              <p id="err-custom-store" class="hidden text-[10px] text-rose-400 font-semibold mt-1">Nama toko wajib diisi!</p>
+            </div>
+
+            <!-- Rekomendasi Lokasi Cepat -->
+            <div>
+              <span class="text-[10px] font-semibold text-slate-400 block mb-1.5">Saran Toko Populer:</span>
+              <div class="flex flex-wrap gap-1.5 text-[11px]">
+                <button type="button" class="btn-suggest-store px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition" data-store="Ranch Market - Pesanggrahan">Ranch Market</button>
+                <button type="button" class="btn-suggest-store px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition" data-store="Alfamidi Super">Alfamidi Super</button>
+                <button type="button" class="btn-suggest-store px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition" data-store="Farmers Market">Farmers Market</button>
+                <button type="button" class="btn-suggest-store px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition" data-store="Total Buah Segar">Total Buah</button>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 pt-2">
+              <button type="button" id="btn-cancel-custom-store" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs touch-scale border border-slate-700">
+                Batal
+              </button>
+              <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-900/30 touch-scale">
+                Simpan & Gunakan
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+    lucide.createIcons();
+
+    const closeModal = () => {
+      modal.classList.add('hidden');
+      modal.innerHTML = '';
+    };
+
+    document.getElementById('modal-store-close').addEventListener('click', closeModal);
+    document.getElementById('btn-cancel-custom-store').addEventListener('click', closeModal);
+
+    const storeInput = document.getElementById('input-custom-store-name');
+    storeInput.focus();
+
+    // Fast suggestion clicks
+    document.querySelectorAll('.btn-suggest-store').forEach(btn => {
+      btn.addEventListener('click', (ev) => {
+        const sName = ev.currentTarget.getAttribute('data-store');
+        storeInput.value = sName;
+        document.getElementById('err-custom-store')?.classList.add('hidden');
+        storeInput.classList.remove('border-rose-500');
+      });
+    });
+
+    document.getElementById('form-add-custom-store').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const val = storeInput.value.trim();
+      if (!val) {
+        document.getElementById('err-custom-store')?.classList.remove('hidden');
+        storeInput.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
+        storeInput.focus();
+        return;
+      }
+
+      Store.addStoreLocation(val);
+      const curDate = Store.getSessionInfo().date || '2026-10-26';
+      Store.saveSessionInfo({
+        storeName: val,
+        date: curDate
+      });
+
+      closeModal();
+      this.showToast(`✓ Lokasi toko aktif: ${val}`);
+      this.render();
     });
   },
 
